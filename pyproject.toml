@@ -1,0 +1,25 @@
+[project]
+name = "commit_format"
+version = "0.0.1"
+authors = [
+  { name="Alex Fabre", email="alex.fabre@rtone.fr" },
+]
+description = "A tool to format git commit messages"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = {file = "LICENSE"}
+
+dependencies = [
+  "codespell"
+]
+
+[project.urls]
+Homepage = "https://github.com/AlexFabre/commit-format"
+Issues = "https://github.com/AlexFabre/commit-format/issues"
+
+[project.scripts]
+commit-format = "commit_format.commit_format:main"
