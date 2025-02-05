@@ -1,9 +1,9 @@
 # commit-format
-A tool to format git commit messages.
+A tool to perform simple checks on git commit messages.
 
 ## Supported checkers
 
-- Check that each message lines does not exceed a length limit. The option `-l <int>` allow custom length (default 80 chars).
+- Check that each message lines does not exceed a length limit. Option `-l <int>` allow for custom length (default is 80 chars).
 - Check that codespell does not find any spelling mistake on commit messages.
 
 ## Installation
