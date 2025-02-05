@@ -1,6 +1,7 @@
 import argparse
 import subprocess
 import re
+from urllib.parse import urlparse
 
 # ANSI escape codes for colors
 RED = '\033[91m'
@@ -8,6 +9,13 @@ YELLOW = '\033[93m'
 GREEN = '\033[92m'
 BLUE = '\033[94m'
 RESET = '\033[0m'
+
+def is_url(url):
+  try:
+    urlparse(url)
+    return True
+  except ValueError:
+    return False
 
 class CommitFormat:
     def __init__(self, verbosity=False):
@@ -25,7 +33,7 @@ class CommitFormat:
         """Prints the given text and highlights the words in the list."""
         for word in words:
             word = self.remove_ansi_color_codes(word)
-            text = text[::-1].replace(f" {word}"[::-1], f"{highlight_color} {word}{RESET}"[::-1], 1)[::-1]
+            text = text[::-1].replace(f"{word}"[::-1], f"{highlight_color}{word}{RESET}"[::-1], 1)[::-1]
         
         return text
 
@@ -84,6 +92,10 @@ class CommitFormat:
     def lines_length(self, commit: str, commit_message: str, length_limit=80) -> bool:
         length_exceeded = 0
         line_number = 0
+        url_line_error = False
+
+        # This variable will handle the full commit message.
+        # It's a line by line agregation with the problematic words highlighted in RED.
         highlighted_commit_message = ""
     
         # Split the commit message into lines
@@ -95,10 +107,20 @@ class CommitFormat:
             removed_words = []
 
             if (line_number > 1):
+                # A line return must be manually added at the begining of new lines
+                # to rebuild the commit message.
                 highlighted_commit_message += "\n"
 
             line_length = len(line)
             if line_length > length_limit:
+
+                # Check for lines containing URLs
+                if is_url(line.split()[-1]):
+                    if len(line.split()) == 2:
+                        continue
+
+                    url_line_error = True
+
                 length_exceeded += 1
 
                 line_copy = line
@@ -107,21 +129,22 @@ class CommitFormat:
                     # Find the last space in the line
                     last_space_index = line_copy.rfind(' ')
                     
-                    # If there's no space, break out of the loop
-                    if last_space_index == -1:
-                        break
-                    
                     removed_word = line_copy[(last_space_index+1):]
                     removed_words.append(removed_word)
 
-                    # Remove the last word by slicing up to the last space
-                    line_copy = line_copy[:last_space_index]
+                    # Remove the last word by slicing up to the last space (if there was any space)
+                    if last_space_index == -1:
+                        line_copy = ""
+                    else:
+                        line_copy = line_copy[:last_space_index]
 
             highlighted_commit_message += f"{self.highlight_words_in_txt(line, removed_words)}"
         
         if (length_exceeded):
             self.warning(f"Commit {commit}: exceeds {length_limit} chars limit")
             self.info(f"---\n{highlighted_commit_message}\n---")
+            if (url_line_error == 1):
+                self.warning("---\nURL format:\n[index] url://...\n---")
     
         return length_exceeded
     
@@ -155,7 +178,7 @@ def main():
         error_on_commit += commit_format.lines_length(commit, commit_message, args.lineslimit)
 
         if not error_on_commit:
-            commit_format.info(f"{GREEN}Commit {commit}{RESET}")
+            commit_format.info(f"{GREEN}Commit {commit} OK{RESET}")
         else:
             error_found += error_on_commit
             
