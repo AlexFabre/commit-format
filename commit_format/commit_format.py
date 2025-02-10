@@ -12,8 +12,8 @@ RESET = '\033[0m'
 
 def is_url(url):
   try:
-    urlparse(url)
-    return True
+    result = urlparse(url)
+    return all([result.scheme, result.netloc])
   except ValueError:
     return False
 
@@ -100,7 +100,7 @@ class CommitFormat:
         
         length_exceeded = 0
         line_number = 0
-        url_line_error = False
+        url_format_error = False
 
         # This variable will handle the full commit message.
         # It's a line by line agregation with the problematic words highlighted in RED.
@@ -125,9 +125,9 @@ class CommitFormat:
                 # Check for lines containing URLs
                 if is_url(line.split()[-1]):
                     if len(line.split()) == 2:
+                        # Expected format for URL: [index] url://...
                         continue
-
-                    url_line_error = True
+                    url_format_error = True
 
                 length_exceeded += 1
 
@@ -151,7 +151,7 @@ class CommitFormat:
         if (length_exceeded):
             self.warning(f"Commit {commit}: exceeds {length_limit} chars limit")
             self.info(f"---\n{highlighted_commit_message}\n---")
-            if (url_line_error == 1):
+            if (url_format_error == True):
                 self.warning("---\nURL format:\n[index] url://...\n---")
     
         return length_exceeded
