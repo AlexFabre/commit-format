@@ -54,7 +54,7 @@ class CommitFormat:
         result = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True, text=True)
         return result.stdout.strip()
 
-    def list_unique_commits(self, current_branch, base_branch='main') -> list:
+    def list_unique_commits(self, current_branch, base_branch) -> list:
         if current_branch != base_branch:
             result = subprocess.run(['git', 'log', '--pretty=format:%h', f'{base_branch}..{current_branch}'], capture_output=True, text=True)
             return result.stdout.split()
@@ -93,7 +93,7 @@ class CommitFormat:
 
         return spell_error
     
-    def lines_length(self, commit: str, commit_message: str, length_limit=0) -> bool:
+    def lines_length(self, commit: str, commit_message: str, length_limit) -> bool:
         
         if length_limit == 0:
             return 0
@@ -159,9 +159,10 @@ class CommitFormat:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Various checks on commit messages.")
-    parser.add_argument('-l', '--lineslimit', type=int, default=0, help="commit message lines max length. Default: '0' (no line limit)")
-    parser.add_argument('-a', '--all', action='store_true', help="force checking all commits (including main branch commits)")
+    parser = argparse.ArgumentParser(description="Perform various checks on commit messages.")
+    parser.add_argument('-l', '--lineslimit', type=int, default=0, help="message line max length. Default: '0' (no line limit)")
+    parser.add_argument('-b', '--base', type=str, default="main", help="name of the base branch. Default 'main")
+    parser.add_argument('-a', '--all', action='store_true', help="force check on all commits (including base branch commits)")
     parser.add_argument('-v', '--verbosity', action='store_true', help="increase output verbosity")
     args = parser.parse_args()
 
@@ -176,7 +177,7 @@ def main():
     if args.all == True:
         commit_list = commit_format.list_all_commits()
     else:
-        commit_list = commit_format.list_unique_commits(current_branch)
+        commit_list = commit_format.list_unique_commits(current_branch, args.base)
     
     if not commit_list:
         commit_format.debug(f"No unique commits on branch {GREEN}{current_branch}{RESET}")
