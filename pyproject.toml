@@ -1,12 +1,12 @@
 [project]
 name = "commit_format"
-version = "0.0.2"
+version = "0.1.0"
 authors = [
-  { name="Alex Fabre", email="alex.fabre@rtone.fr" },
+  { name="Alex Fabre", email="m.alexfabre@gmail.com" },
 ]
-description = "A tool to format git commit messages"
+description = "A tool to check git commit messages format"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
