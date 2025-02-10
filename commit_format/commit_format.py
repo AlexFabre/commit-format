@@ -61,6 +61,10 @@ class CommitFormat:
         else:
             self.error(f"Running on branch {base_branch}. Abort checking commits.")
             exit(0)
+    
+    def list_all_commits(self) -> list:
+            result = subprocess.run(['git', 'log', '--pretty=format:%h'], capture_output=True, text=True)
+            return result.stdout.split()
 
     def get_commit_message(self, commit_sha: str) -> str:
         result = subprocess.run(['git', 'show', '-s', '--format=%B', commit_sha], capture_output=True, text=True)
@@ -157,6 +161,7 @@ class CommitFormat:
 def main():
     parser = argparse.ArgumentParser(description="Various checks on commit messages.")
     parser.add_argument('-l', '--lineslimit', type=int, default=0, help="commit message lines max length. Default: '0' (no line limit)")
+    parser.add_argument('-a', '--all', action='store_true', help="force checking all commits (including main branch commits)")
     parser.add_argument('-v', '--verbosity', action='store_true', help="increase output verbosity")
     args = parser.parse_args()
 
@@ -168,7 +173,11 @@ def main():
         commit_format.error("Not inside an active git repository")
         exit(1)
 
-    commit_list = commit_format.list_unique_commits(current_branch)
+    if args.all == True:
+        commit_list = commit_format.list_all_commits()
+    else:
+        commit_list = commit_format.list_unique_commits(current_branch)
+    
     if not commit_list:
         commit_format.debug(f"No unique commits on branch {GREEN}{current_branch}{RESET}")
         exit(0)
