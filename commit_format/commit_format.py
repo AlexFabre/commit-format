@@ -89,7 +89,11 @@ class CommitFormat:
 
         return spell_error
     
-    def lines_length(self, commit: str, commit_message: str, length_limit=80) -> bool:
+    def lines_length(self, commit: str, commit_message: str, length_limit=0) -> bool:
+        
+        if length_limit == 0:
+            return 0
+        
         length_exceeded = 0
         line_number = 0
         url_line_error = False
@@ -152,7 +156,7 @@ class CommitFormat:
 
 def main():
     parser = argparse.ArgumentParser(description="Various checks on commit messages.")
-    parser.add_argument('-l', '--lineslimit', type=int, default=80, help="commit message lines max length. (Default 80)")
+    parser.add_argument('-l', '--lineslimit', type=int, default=0, help="commit message lines max length. Default: '0' (no line limit)")
     parser.add_argument('-v', '--verbosity', action='store_true', help="increase output verbosity")
     args = parser.parse_args()
 
