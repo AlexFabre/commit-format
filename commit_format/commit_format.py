@@ -53,14 +53,21 @@ class CommitFormat:
     def get_current_branch(self) -> str:
         result = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True, text=True)
         return result.stdout.strip()
+    
+    def get_remote_name(self) -> str:
+        result = subprocess.run(['git', 'remote'], capture_output=True, text=True)
+        return result.stdout.strip()
 
     def list_unique_commits(self, current_branch, base_branch) -> list:
-        if current_branch != base_branch:
-            result = subprocess.run(['git', 'log', '--pretty=format:%h', f'{base_branch}..{current_branch}'], capture_output=True, text=True)
-            return result.stdout.split()
-        else:
+        if current_branch == base_branch:
             self.error(f"Running on branch {base_branch}. Abort checking commits.")
             exit(0)
+
+        remote = self.get_remote_name()
+        self.info(f"Base branch: {remote}/{base_branch}")
+        
+        result = subprocess.run(['git', 'log', '--pretty=format:%h', f'{remote}/{base_branch}..{current_branch}'], capture_output=True, text=True)
+        return result.stdout.split()
     
     def list_all_commits(self) -> list:
             result = subprocess.run(['git', 'log', '--pretty=format:%h'], capture_output=True, text=True)
