@@ -180,8 +180,8 @@ def main():
         commit_list = commit_format.list_unique_commits(current_branch, args.base)
     
     if not commit_list:
-        commit_format.debug(f"No unique commits on branch {GREEN}{current_branch}{RESET}")
-        exit(0)
+        commit_format.error(f"Error:{RESET} branch {GREEN}{current_branch}{RESET} has no diff commit with base branch {GREEN}{args.base}{RESET}")
+        exit(1)
 
     commit_format.debug(f"Checking {GREEN}{len(commit_list)}{RESET} commits on branch {GREEN}{current_branch}{RESET}")
 
