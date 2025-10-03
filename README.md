@@ -8,6 +8,7 @@ Primarly disigned for to check for spelling mistakes in commit messages,
 
 - Check that each message lines does not exceed a length limit.
 - Check for spelling mistake on commit messages.
+- `NEW` Check commit header/body/footer against a defined template.
 
 ## Installation
 
@@ -44,6 +45,43 @@ This new option `-ns` `--no-spelling` let the user disable the spelling checker.
 
 ```sh
 $ commit-format -ns
+```
+
+### -t (--template FILE) Template compliance
+
+You can provide a simple INI template to validate the commit header/footer format
+and required symbols.
+
+Usage:
+
+```sh
+$ commit-format -t /path/to/template.ini
+```
+
+Template schema (INI):
+
+- [header]
+  - pattern: Regex that the first line (header) must match.
+- [body]
+  - allow_empty: true/false to allow a commit with only a header (no body).
+  - blank_line_after_header: true/false to enforce a blank line between header and body.
+- [footer]
+  - required: true/false to require a footer section.
+  - pattern: Regex that each footer line must match.
+
+Example `template.ini`:
+
+```ini
+[header]
+pattern = ^(feat: |fix: |doc: |ci: ).+$
+
+[structure]
+allow_empty = false
+blank_line_after_header = true
+
+[footer]
+required = true
+pattern = ^(Signed-off-by: ).+$
 ```
 
 ## Behavior option

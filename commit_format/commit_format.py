@@ -1,6 +1,7 @@
 import argparse
 import subprocess
 import re
+import configparser
 from urllib.parse import urlparse
 
 # ANSI escape codes for colors
@@ -20,6 +21,7 @@ def is_url(url):
 class CommitFormat:
     def __init__(self, verbosity=False):
         self.verbosity = verbosity
+        self.commit_template = None
 
     def error(self, text: str):
         """Prints the given text in red."""
@@ -155,19 +157,122 @@ class CommitFormat:
                 self.warning("---\nURL format:\n[index] url://...\n---")
     
         return length_exceeded
-    
 
+    def load_template(self, template_path: str):
+        cfg = configparser.ConfigParser()
+        read = cfg.read(template_path)
+        if not read:
+            self.error(f"Template file not found or unreadable: {template_path}")
+            exit(2)
+        self.commit_template = cfg
+    
+    def _split_message(self, message: str):
+        lines = message.splitlines()
+        line_cnt = len(lines)
+        header = lines[0] if lines else ""
+    
+        # Identify the last non-empty line as the potential footer
+        i = line_cnt - 1
+        while i > 0 and lines[i].strip() == "":
+            i -= 1
+    
+        footer_start = i if i > 0 else line_cnt
+    
+        # Determine the body by excluding the header and footer
+        body = lines[1:footer_start] if line_cnt > 1 else []
+        footers = [lines[footer_start]] if footer_start < line_cnt else []
+
+        self.debug(f'--HEADER--\n{header}\n---BODY---\n{body}\n--FOOTER--\n{footers}\n----------')
+    
+        return header, body, footers, lines
+
+    def template_check(self, commit: str, commit_message: str) -> int:
+        if not self.commit_template:
+            return 0
+
+        errors = 0
+        cfg = self.commit_template
+
+        header, body, footers, all_lines = self._split_message(commit_message)
+
+        # Header checks
+        if cfg.has_section('header') and cfg.has_option('header', 'pattern'):
+            pattern = cfg.get('header', 'pattern')
+            if not re.match(pattern, header):
+                errors += 1
+                self.warning(f"Commit {commit}: header does not match required pattern")
+                self.info(f"Header: '{header}'")
+                self.info(f"Expected pattern: {pattern}")
+        
+        # Body separation check
+
+        blank_after_header = False
+        if cfg.has_section('body') and cfg.has_option('body', 'blank_line_after_header'):
+            try:
+                blank_after_header = cfg.getboolean('body', 'blank_line_after_header')
+            except ValueError:
+                blank_after_header = False
+
+        if blank_after_header and len(all_lines) > 1:
+            if all_lines[1].strip() != "":
+                errors += 1
+                self.warning(f"Commit {commit}: missing blank line after header")
+
+        # Body emptiness check
+        allow_empty = True
+        if cfg.has_section('body') and cfg.has_option('body', 'allow_empty'):
+            try:
+                allow_empty = cfg.getboolean('body', 'allow_empty')
+            except ValueError:
+                allow_empty = True
+
+        if not allow_empty:
+            body_has_content = any(line.strip() != "" for line in body)
+            if not body_has_content:
+                errors += 1
+                self.warning(f"Commit {commit}: commit body is empty")
+
+        # Footer checks
+        footer_required = False
+        if cfg.has_section('footer') and cfg.has_option('footer', 'required'):
+            try:
+                footer_required = cfg.getboolean('footer', 'required')
+            except ValueError:
+                footer_required = False
+
+        if footer_required and len(footers) == 0:
+            errors += 1
+            self.warning(f"Commit {commit}: missing required footer section")
+
+        # Footer line pattern
+        if footer_required and len(footers) > 0 and cfg.has_section('footer') and cfg.has_option('footer', 'pattern'):
+            fpattern = cfg.get('footer', 'pattern')
+            compiled = re.compile(fpattern)
+            for line in footers:
+                if line.strip() == "":
+                    continue
+                if not compiled.match(line):
+                    errors += 1
+                    self.warning(f"Commit {commit}: footer line does not match pattern")
+                    self.info(f"Line: '{line}'")
+                    self.info(f"Expected pattern: {fpattern}")
+
+        return errors
 
 def main():
     parser = argparse.ArgumentParser(description="Perform various checks on commit messages.")
     parser.add_argument('-ns', '--no-spelling',  action='store_true', help="disable checking misspelled words")
     parser.add_argument('-l', '--limit', type=int, default=72, help="commit lines maximum length. Default: '72' ('0' => no line limit)")
+    parser.add_argument('-t', '--template', type=str, default=None, help="path to a template INI file to validate header/body/footer commit message structure")
     parser.add_argument('-b', '--base', type=str, default="main", help="name of the base branch. Default 'main'")
     parser.add_argument('-a', '--all', action='store_true', help="check all commits (including base branch commits)")
     parser.add_argument('-v', '--verbosity', action='store_true', help="increase output verbosity")
     args = parser.parse_args()
 
     commit_format = CommitFormat(verbosity=args.verbosity)
+
+    if args.template:
+        commit_format.load_template(args.template)
 
     error_found = 0
     current_branch = commit_format.get_current_branch()
@@ -192,6 +297,8 @@ def main():
         if args.no_spelling == False:
             error_on_commit += commit_format.spell_check(commit, commit_message)
         error_on_commit += commit_format.lines_length(commit, commit_message, args.limit)
+        if commit_format.commit_template is not None:
+            error_on_commit += commit_format.template_check(commit, commit_message)
 
         if not error_on_commit:
             commit_format.info(f"{GREEN}Commit {commit} OK{RESET}")
