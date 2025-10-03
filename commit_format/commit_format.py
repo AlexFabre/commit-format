@@ -103,7 +103,7 @@ class CommitFormat:
         url_format_error = False
 
         # This variable will handle the full commit message.
-        # It's a line by line agregation with the problematic words highlighted in RED.
+        # It's a line by line aggregation with the problematic words highlighted in RED.
         highlighted_commit_message = ""
     
         # Split the commit message into lines
@@ -115,7 +115,7 @@ class CommitFormat:
             removed_words = []
 
             if (line_number > 1):
-                # A line return must be manually added at the begining of new lines
+                # A line return must be manually added at the beginning of new lines
                 # to rebuild the commit message.
                 highlighted_commit_message += "\n"
 
@@ -160,9 +160,9 @@ class CommitFormat:
 
 def main():
     parser = argparse.ArgumentParser(description="Perform various checks on commit messages.")
-    parser.add_argument('-l', '--lineslimit', type=int, default=0, help="message line max length. Default: '0' (no line limit)")
-    parser.add_argument('-b', '--base', type=str, default="main", help="name of the base branch. Default 'main")
-    parser.add_argument('-a', '--all', action='store_true', help="force check on all commits (including base branch commits)")
+    parser.add_argument('-l', '--limit', type=int, default=72, help="commit lines maximum length. Default: '72' ('0' => no line limit)")
+    parser.add_argument('-b', '--base', type=str, default="main", help="name of the base branch. Default 'main'")
+    parser.add_argument('-a', '--all', action='store_true', help="check all commits (including base branch commits)")
     parser.add_argument('-v', '--verbosity', action='store_true', help="increase output verbosity")
     args = parser.parse_args()
 
@@ -189,7 +189,7 @@ def main():
         error_on_commit = 0
         commit_message = commit_format.get_commit_message(commit)
         error_on_commit += commit_format.spell_check(commit, commit_message)
-        error_on_commit += commit_format.lines_length(commit, commit_message, args.lineslimit)
+        error_on_commit += commit_format.lines_length(commit, commit_message, args.limit)
 
         if not error_on_commit:
             commit_format.info(f"{GREEN}Commit {commit} OK{RESET}")
