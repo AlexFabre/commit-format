@@ -160,6 +160,7 @@ class CommitFormat:
 
 def main():
     parser = argparse.ArgumentParser(description="Perform various checks on commit messages.")
+    parser.add_argument('-ns', '--no-spelling',  action='store_true', help="disable checking misspelled words")
     parser.add_argument('-l', '--limit', type=int, default=72, help="commit lines maximum length. Default: '72' ('0' => no line limit)")
     parser.add_argument('-b', '--base', type=str, default="main", help="name of the base branch. Default 'main'")
     parser.add_argument('-a', '--all', action='store_true', help="check all commits (including base branch commits)")
@@ -188,7 +189,8 @@ def main():
     for commit in commit_list:
         error_on_commit = 0
         commit_message = commit_format.get_commit_message(commit)
-        error_on_commit += commit_format.spell_check(commit, commit_message)
+        if args.no_spelling == False:
+            error_on_commit += commit_format.spell_check(commit, commit_message)
         error_on_commit += commit_format.lines_length(commit, commit_message, args.limit)
 
         if not error_on_commit:
