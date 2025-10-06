@@ -61,12 +61,15 @@ class CommitFormat:
             print(text)
 
     def get_current_branch(self) -> str:
+        self.debug("get_current_branch: git rev-parse --abbrev-ref HEAD")
         result = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
                                 capture_output=True, text=True, check=False)
         return result.stdout.strip()
 
     def list_unique_commits(self, current_branch, base_branch) -> list:
         if current_branch != base_branch:
+            self.debug("list_unique_commits: git log --pretty=format:%h "
+                       f"{base_branch}..{current_branch}")
             result = subprocess.run(['git', 'log', '--pretty=format:%h',
                                      f'{base_branch}..{current_branch}'],
                                      capture_output=True,
