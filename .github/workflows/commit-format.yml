@@ -20,5 +20,5 @@ jobs:
         pip install codespell
     - name: commit-format 
       run: |
-        git fetch
+        git fetch --no-tags --depth=1 origin main
         python commit_format/commit_format.py -t .commit-format -v -b origin/main

@@ -3,7 +3,7 @@ A tool to check your commit messages format.
 
 ## Supported checkers
 
-Primarly disigned for to check for spelling mistakes in commit messages,
+Primarily disigned for to check for spelling mistakes in commit messages,
 `commit-format` now comes with various checker allowing to:
 
 - Check that each message lines does not exceed a length limit.
@@ -95,7 +95,7 @@ pattern = ^(Signed-off-by: ).+$
 ### -a (--all) Force checking all commits
 
 By default the script will only run on a branch and stop when reaching the base branch.  
-If run on a base branch direclty, the script will throw an error:
+If run on a base branch directly, the script will throw an error:
 
 ```sh
 $ commit-format
@@ -120,12 +120,15 @@ As described in [option -a section](#a---all-force-checking-all-commits) the bas
 to let the script restrict it's analysis on the commits of a branch.    
 Default value for the base branch name is `main`.  
 
+> When running this script in a CI environment, you may be required to fetch your base branch
+> manually. See [github workflow](.github/workflows/commit-format.yml) example.
+
 Usage:
 
 ```sh
-$ commit-format -b master
+$ commit-format -b origin/main
 ```
 
 ### -v (--verbosity)
 
-Diplay debug messages from the script.
+Display debug messages from the script.
