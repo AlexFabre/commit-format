@@ -49,16 +49,16 @@ $ commit-format -ns
 
 ### -t (--template FILE) Template compliance
 
-You can provide a simple INI template to validate the commit header/footer format
+You can provide a configuration TOML file template to validate the commit header/footer format
 and required symbols.
 
 Usage:
 
 ```sh
-$ commit-format -t /path/to/template.ini
+$ commit-format -t /path/to/.commit-format
 ```
 
-Template schema (INI):
+Template schema (TOML):
 
 - [header]
   - pattern: Regex that the first line (header) must match.
@@ -69,19 +69,25 @@ Template schema (INI):
   - required: true/false to require a footer section.
   - pattern: Regex that each footer line must match.
 
-Example `template.ini`:
+Example `.commit-format`:
 
-```ini
+```toml
 [header]
-pattern = ^(feat: |fix: |doc: |ci: ).+$
+# header line regex:
+pattern = ^(feat: |fic: |ci: |doc: ).+$
 
-[structure]
+[body]
+# Allow empty body commit message. (i.e. single line commit message).
 allow_empty = false
+# Require that header line and body line are separated by an empty line.
 blank_line_after_header = true
 
 [footer]
+# Require a footer line
 required = true
+# Footer line regex
 pattern = ^(Signed-off-by: ).+$
+
 ```
 
 ## Behavior option

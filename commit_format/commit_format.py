@@ -290,7 +290,7 @@ def main():
     parser.add_argument('-t', '--template',
                         type=str,
                         default=None,
-                        help="path to a template INI file to validate header/body/footer "
+                        help="path to a commit-format template file to validate header/body/footer "
                         "commit message structure")
     parser.add_argument('-b', '--base',
                         type=str,
