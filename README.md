@@ -1,4 +1,5 @@
 # commit-format
+
 A tool to check your commit messages format.
 
 ## Supported checkers
@@ -13,18 +14,18 @@ Primarily disigned for to check for spelling mistakes in commit messages,
 ## Installation
 
 ```sh
-$ pip install commit-format
+pip install commit-format
 ```
 
 Help command will show you all availables options:
 
 ```sh
-$ commit-format --help
+commit-format --help
 ```
 
 ## Format options
 
-### -l (--limit INT) Line limit check
+### `-l`, `--limit` Line limit check
 
 You can check that every line in the commit message (including the title/header)
 does not exceed a length limit. By default the value is set to `72`.
@@ -34,28 +35,39 @@ A limit of '0' `--limit 0` will disable the line limit checker.
 Usage:
 
 ```sh
-$ commit-format -l 80
+commit-format -l 80
 ```
 
-### -ns (--no-spelling) Disable spelling mistake
+> URL in the commit body will not trigger any length warnings if it
+> adheres to the expected format.
+>
+> ```txt
+> my commit message has a ref[1]
+> ...
+>
+> [1] url://...
+> ```
 
-By default, `commit-format` checks for common spelling mistakes in the commit messages.  
-This option rely on `codespell` and may produce some false-positive results.  
-This new option `-ns` `--no-spelling` let the user disable the spelling checker.
+### `-ns`, `--no-spelling` Disable spelling mistake
+
+By default, `commit-format` checks for common spelling mistakes in the commit
+messages. This option rely on `codespell` and may produce some false-positive
+results. This new option `-ns` `--no-spelling` let the user disable the
+spelling checker.
 
 ```sh
-$ commit-format -ns
+commit-format -ns
 ```
 
-### -t (--template FILE) Template compliance
+### `-t`, `--template` Template compliance
 
-You can provide a configuration TOML file template to validate the commit header/footer format
-and required symbols.
+You can provide a configuration TOML file template to validate the commit
+header/footer format and required symbols.
 
 Usage:
 
 ```sh
-$ commit-format -t /path/to/.commit-format
+commit-format -t /path/to/.commit-format
 ```
 
 Template schema (TOML):
@@ -64,7 +76,8 @@ Template schema (TOML):
   - pattern: Regex that the first line (header) must match.
 - [body]
   - allow_empty: true/false to allow a commit with only a header (no body).
-  - blank_line_after_header: true/false to enforce a blank line between header and body.
+  - blank_line_after_header: true/false to enforce a blank line between header
+  and body.
 - [footer]
   - required: true/false to require a footer section.
   - pattern: Regex that each footer line must match.
@@ -92,13 +105,12 @@ pattern = ^(Signed-off-by: ).+$
 
 ## Behavior option
 
-### -a (--all) Force checking all commits
+### `-a`, `--all` Force checking all commits
 
-By default the script will only run on a branch and stop when reaching the base branch.  
-If run on a base branch directly, the script will throw an error:
+By default the script will only run on a branch and stop when reaching the base
+branch. If run on a base branch directly, the script will throw an error:
 
 ```sh
-$ commit-format
 Running on branch main. Abort checking commits.
 ```
 
@@ -110,25 +122,26 @@ to run regadless the branch name.
 Usage:
 
 ```sh
-$ commit-format -a
+commit-format -a
 ```
 
-### -b (--base) Base branch name
+### `-b`, `--base` Base branch name
 
 You can set the base branch name according to your project.  
-As described in [option -a section](#a---all-force-checking-all-commits) the base branch name is required
-to let the script restrict it's analysis on the commits of a branch.    
-Default value for the base branch name is `main`.  
+As described in `option -a` section the base branch name is required to let the
+script restrict it's analysis on the commits of a branch. Default value for the
+base branch name is `main`.  
 
-> When running this script in a CI environment, you may be required to fetch your base branch
-> manually. See [github workflow](.github/workflows/commit-format.yml) example.
+> When running this script in a CI environment, you may be required to fetch your
+> base branch manually.
+> See [github workflow](.github/workflows/commit-format.yml) example.
 
 Usage:
 
 ```sh
-$ commit-format -b origin/main
+commit-format -b origin/main
 ```
 
-### -v (--verbosity)
+### `-v`, `--verbosity`
 
 Display debug messages from the script.
