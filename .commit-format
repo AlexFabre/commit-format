@@ -1,6 +1,6 @@
 [header]
 # header line regex:
-pattern = ^(option: |requirements: |ci: |doc: |release: |script: ).+$
+pattern = ^(option: |requirements: |ci: |doc: |release: |script: )(?!.*\bwip\b).+$
 
 [body]
 # Allow empty body commit message. (i.e. single line commit message).
