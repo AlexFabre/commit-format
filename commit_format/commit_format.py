@@ -19,12 +19,25 @@ GREEN = '\033[92m'
 BLUE = '\033[94m'
 RESET = '\033[0m'
 
-def is_url(url):
+def is_url(url: str) -> bool:
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+
+def contains_url(string: str) -> bool:
+    if '/' not in string:
+        return False
+
+    # Split on '(', ')', '[', ']', and space ' '
+    word_list = re.split(r'[()\[\]\s]', string)
+
+    for w in word_list:
+        if is_url(w):
+            return True
+
+    return False
 
 class CommitFormat:
     def __init__(self, verbosity=False):
@@ -143,12 +156,13 @@ class CommitFormat:
 
             line_length = len(line)
             if line_length > length_limit:
-
-                # Check for lines containing URLs
-                if is_url(line.split()[-1]):
-                    if len(line.split()) == 2:
-                        # Expected format for URL: [index] url://...
-                        continue
+                if contains_url(line):
+                    # Check for lines containing URLs
+                    if is_url(line.split()[-1]):
+                        if len(line.split()) == 2:
+                            # Comply with expected format for URL:
+                            # [index] url://...
+                            continue
                     url_format_error = True
 
                 length_exceeded += 1
@@ -171,10 +185,11 @@ class CommitFormat:
             highlighted_commit_message += f"{self.highlight_words_in_txt(line, removed_words)}"
 
         if length_exceeded:
-            self.warning(f"Commit {commit}: exceeds {length_limit} chars limit")
-            self.info(f"---\n{highlighted_commit_message}\n---")
             if url_format_error is True:
-                self.warning("---\nURL format:\n[index] url://...\n---")
+                self.warning(f"Commit {commit}: bad URL format:\n[index] url://...")
+            else:
+                self.warning(f"Commit {commit}: exceeds {length_limit} chars limit")
+            self.info(f"---\n{highlighted_commit_message}\n---")
 
         return length_exceeded
 
