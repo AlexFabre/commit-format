@@ -2,17 +2,20 @@ name: Build and Publish
 
 on: push
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4 # TODO: pin action to a commit SHA
       with:
         persist-credentials: false
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5 # TODO: pin action to a commit SHA
       with:
         python-version: "3.x"
     - name: Install pypa/build
