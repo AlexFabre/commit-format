@@ -465,8 +465,9 @@ def main():
                             f"has no diff commit with base branch {GREEN}{args.base}{RESET}")
         sys.exit(1)
 
-    commit_format.debug(f"Checking {GREEN}{len(commit_list)}{RESET} "
-                        "commits on branch {GREEN}{current_branch}{RESET}")
+    commit_format.debug(
+        f"Checking {GREEN}{len(commit_list)}{RESET} commits on branch {GREEN}{current_branch}{RESET}"
+    )
 
     for commit in commit_list:
         error_on_commit = 0
