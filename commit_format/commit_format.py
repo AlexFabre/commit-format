@@ -9,7 +9,9 @@ import argparse
 import subprocess
 import sys
 import re
+import shutil
 import configparser
+from typing import Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
 # ANSI escape codes for colors
@@ -18,6 +20,14 @@ YELLOW = '\033[93m'
 GREEN = '\033[92m'
 BLUE = '\033[94m'
 RESET = '\033[0m'
+
+# Precompiled patterns for sanitization
+ANSI_ESCAPE_RE = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
+CTRL_RE = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
+
+def sanitize_user_text(text: str) -> str:
+    """Remove ANSI escapes and control chars from user-controlled text."""
+    return CTRL_RE.sub('', ANSI_ESCAPE_RE.sub('', text))
 
 def is_url(url: str) -> bool:
     try:
@@ -40,38 +50,64 @@ def contains_url(string: str) -> bool:
     return False
 
 class CommitFormat:
-    def __init__(self, verbosity=False):
+    def __init__(self, verbosity: bool = False, use_color: Optional[bool] = None):
         self.verbosity = verbosity
+        # Enable color only when explicitly allowed (default: TTY) and not disabled.
+        self.use_color = sys.stdout.isatty() if use_color is None else bool(use_color)
         self.commit_template = None
 
     def error(self, text: str):
-        """Prints the given text in red."""
-        print(f"{RED}{text}{RESET}")
+        """Prints the given text, in red when color is enabled."""
+        if self.use_color:
+            print(f"{RED}{text}{RESET}")
+        else:
+            print(text)
 
     def warning(self, text: str):
-        """Prints the given text in yellow."""
-        print(f"{YELLOW}{text}{RESET}")
+        """Prints the given text, in yellow when color is enabled."""
+        if self.use_color:
+            print(f"{YELLOW}{text}{RESET}")
+        else:
+            print(text)
 
-    def highlight_words_in_txt(self, text: str, words="", highlight_color=f"{RED}") -> str:
-        """Prints the given text and highlights the words in the list."""
+    def highlight_words_in_txt(self, text: str, words: Optional[Sequence[str]] = None,
+                               highlight_color: str = f"{RED}") -> str:
+        """Return text with the last occurrence of each word highlighted.
+
+        Word list and text are sanitized to avoid terminal escapes.
+        Color highlighting is applied only when color is enabled.
+        """
+        if not words:
+            return sanitize_user_text(text)
+
+        clean_text = sanitize_user_text(text)
         for word in words:
             word = self.remove_ansi_color_codes(word)
-            text = text[::-1].replace(f"{word}"[::-1],
-                                      f"{highlight_color}{word}{RESET}"[::-1], 1)[::-1]
-        return text
+            if not word:
+                continue
+            if self.use_color and highlight_color:
+                replacement = f"{highlight_color}{word}{RESET}"
+            else:
+                replacement = word
+            clean_text = clean_text[::-1].replace(
+                f"{word}"[::-1], replacement[::-1], 1
+            )[::-1]
+        return clean_text
 
     def remove_ansi_color_codes(self, text: str) -> str:
-        ansi_escape_pattern = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
-        return ansi_escape_pattern.sub('', text)
+        return ANSI_ESCAPE_RE.sub('', text)
 
     def info(self, text: str):
-        """Prints the given text in blue."""
+        """Prints the given text (no color)."""
         print(text)
 
     def debug(self, text: str):
-        """Prints the given text in green."""
+        """Prints the given text when verbosity is enabled."""
         if self.verbosity:
-            print(text)
+            if self.use_color:
+                print(f"{GREEN}{text}{RESET}")
+            else:
+                print(text)
 
     def get_current_branch(self) -> str:
         self.debug("get_current_branch: git rev-parse --abbrev-ref HEAD")
@@ -103,16 +139,35 @@ class CommitFormat:
                                 text=True, check=False)
         return result.stdout.strip()
 
-    def run_codespell(self, message: str) -> tuple:
-        result = subprocess.run(['codespell', '-c', '-', '-'], input=message,
-                                capture_output=True,
-                                text=True, check=False)
-        lines = result.stdout.strip().split('\n')
+    def run_codespell(self, message: str) -> Tuple[str, Sequence[str]]:
+        """Run codespell on the provided message and return (proposition_text, faulty_words).
+
+        If codespell is not available or fails, return empty results.
+        """
+        if shutil.which('codespell') is None:
+            self.warning("codespell not found; skipping spell check")
+            return "", []
+
+        result = subprocess.run(
+            ['codespell', '-c', '-', '-'],
+            input=message,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        # If codespell fails but produced stdout, attempt to parse; otherwise, skip.
+        stdout = result.stdout or ""
+        lines = stdout.strip().split('\n') if stdout else []
         selected_lines = [line for index, line in enumerate(lines) if index % 2 != 0]
         faulty_words = [line.split()[0] for line in selected_lines if line]
+        if result.returncode not in (0, 65):  # 65: codespell found issues
+            if not selected_lines:
+                self.warning(f"codespell failed: {result.stderr.strip()}")
+                return "", []
         return '\n'.join(selected_lines), faulty_words
 
-    def spell_check(self, commit: str, commit_message: str) -> bool:
+    def spell_check(self, commit: str, commit_message: str) -> int:
         spell_error = 0
 
         # Run codespell
@@ -120,15 +175,19 @@ class CommitFormat:
         if codespell_proposition:
             spell_error += 1
             self.warning(f"Commit {commit} has spelling mistakes")
-            self.info(self.highlight_words_in_txt(f"---\n{commit_message}", faulty_words))
-            self.info(f"---\nCodespell fix proposition:\n{codespell_proposition}\n---")
+            # Sanitize commit message before printing; apply highlighting conditionally
+            highlighted = self.highlight_words_in_txt(
+                f"---\n{commit_message}", faulty_words, RED if self.use_color else ''
+            )
+            self.info(highlighted)
+            self.info(f"---\nCodespell fix proposition:\n{sanitize_user_text(codespell_proposition)}\n---")
 
         # Run another spelling tool:
         # ...
 
         return spell_error
 
-    def lines_length(self, commit: str, commit_message: str, length_limit) -> bool:
+    def lines_length(self, commit: str, commit_message: str, length_limit) -> int:
 
         if length_limit == 0:
             return 0
@@ -182,14 +241,14 @@ class CommitFormat:
                     else:
                         line_copy = line_copy[:last_space_index]
 
-            highlighted_commit_message += f"{self.highlight_words_in_txt(line, removed_words)}"
+            highlighted_commit_message += f"{self.highlight_words_in_txt(line, removed_words, RED if self.use_color else '')}"
 
         if length_exceeded:
             if url_format_error is True:
                 self.warning(f"Commit {commit}: bad URL format:\n[index] url://...")
             else:
                 self.warning(f"Commit {commit}: exceeds {length_limit} chars limit")
-            self.info(f"---\n{highlighted_commit_message}\n---")
+            self.info(f"---\n{sanitize_user_text(highlighted_commit_message)}\n---")
 
         return length_exceeded
 
@@ -343,9 +402,13 @@ def main():
     parser.add_argument('-v', '--verbosity',
                         action='store_true',
                         help="increase output verbosity")
+    parser.add_argument('-nc', '--no-color',
+                        action='store_true',
+                        help="disable color output and sanitize terminal sequences")
     args = parser.parse_args()
 
-    commit_format = CommitFormat(verbosity=args.verbosity)
+    commit_format = CommitFormat(verbosity=args.verbosity,
+                                 use_color=(not args.no_color) and sys.stdout.isatty())
 
     if args.template:
         commit_format.load_template(args.template)
