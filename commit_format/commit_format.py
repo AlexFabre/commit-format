@@ -24,6 +24,7 @@ RESET = '\033[0m'
 # Precompiled patterns for sanitization
 ANSI_ESCAPE_RE = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
 CTRL_RE = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
+MAX_PATTERN_LENGTH = 500
 
 def sanitize_user_text(text: str) -> str:
     """Remove ANSI escapes and control chars from user-controlled text."""
@@ -334,11 +335,23 @@ class CommitFormat:
         # Header checks
         if cfg.has_section('header') and cfg.has_option('header', 'pattern'):
             pattern = cfg.get('header', 'pattern')
-            if not re.match(pattern, header):
+            if len(pattern) > MAX_PATTERN_LENGTH:
                 errors += 1
-                self.warning(f"Commit {commit}: header does not match required pattern")
-                self.info(f"Header: '{header}'")
-                self.info(f"Expected pattern: {pattern}")
+                self.warning("Header pattern too long; refusing to evaluate")
+            else:
+                try:
+                    try:
+                        compiled = re.compile(pattern, timeout=0.05)  # type: ignore[call-arg]
+                    except TypeError:
+                        compiled = re.compile(pattern)
+                    if not compiled.fullmatch(header):
+                        errors += 1
+                        self.warning("Commit {commit}: header does not match required pattern")
+                        self.info(f"Header: '{header}'")
+                        self.info(f"Expected pattern: {pattern}")
+                except Exception as exc:  # re.error or timeout
+                    errors += 1
+                    self.warning(f"Invalid header pattern: {exc}")
 
         # Body separation check
 
@@ -378,15 +391,26 @@ class CommitFormat:
             and cfg.has_section('footer')
             and cfg.has_option('footer', 'pattern')):
             fpattern = cfg.get('footer', 'pattern')
-            compiled = re.compile(fpattern)
-            for line in footers:
-                if line.strip() == "":
-                    continue
-                if not compiled.match(line):
+            if len(fpattern) > MAX_PATTERN_LENGTH:
+                errors += 1
+                self.warning("Footer pattern too long; refusing to evaluate")
+            else:
+                try:
+                    try:
+                        compiled_footer = re.compile(fpattern, timeout=0.05)  # type: ignore[call-arg]
+                    except TypeError:
+                        compiled_footer = re.compile(fpattern)
+                    for line in footers:
+                        if line.strip() == "":
+                            continue
+                        if not compiled_footer.fullmatch(line):
+                            errors += 1
+                            self.warning(f"Commit {commit}: footer line does not match pattern")
+                            self.info(f"Line: '{line}'")
+                            self.info(f"Expected pattern: {fpattern}")
+                except Exception as exc:
                     errors += 1
-                    self.warning(f"Commit {commit}: footer line does not match pattern")
-                    self.info(f"Line: '{line}'")
-                    self.info(f"Expected pattern: {fpattern}")
+                    self.warning(f"Invalid footer pattern: {exc}")
 
         return errors
 
