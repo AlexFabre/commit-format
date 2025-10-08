@@ -113,6 +113,9 @@ class CommitFormat:
         self.debug("get_current_branch: git rev-parse --abbrev-ref HEAD")
         result = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
                                 capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            self.error(f"git rev-parse failed: {result.stderr.strip()}")
+            return ""
         return result.stdout.strip()
 
     def list_unique_commits(self, current_branch, base_branch) -> list:
@@ -121,8 +124,11 @@ class CommitFormat:
                        f"{base_branch}..{current_branch}")
             result = subprocess.run(['git', 'log', '--pretty=format:%h',
                                      f'{base_branch}..{current_branch}'],
-                                     capture_output=True,
-                                     text=True, check=False)
+                                    capture_output=True,
+                                    text=True, check=False)
+            if result.returncode != 0:
+                self.error(f"git log failed: {result.stderr.strip()}")
+                sys.exit(2)
             return result.stdout.split()
 
         self.error(f"Running on branch {base_branch}. Abort checking commits.")
@@ -131,12 +137,18 @@ class CommitFormat:
     def list_all_commits(self) -> list:
         result = subprocess.run(['git', 'log', '--pretty=format:%h'],
                                 capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            self.error(f"git log failed: {result.stderr.strip()}")
+            return []
         return result.stdout.split()
 
     def get_commit_message(self, commit_sha: str) -> str:
         result = subprocess.run(['git', 'show', '-s', '--format=%B', commit_sha],
                                 capture_output=True,
                                 text=True, check=False)
+        if result.returncode != 0:
+            self.error(f"git show {commit_sha} failed: {result.stderr.strip()}")
+            return ""
         return result.stdout.strip()
 
     def run_codespell(self, message: str) -> Tuple[str, Sequence[str]]:
@@ -446,7 +458,7 @@ def main():
         else:
             error_found += error_on_commit
 
-    sys.exit(error_found)
+    sys.exit(1 if error_found else 0)
 
 if __name__ == '__main__':
     main()
