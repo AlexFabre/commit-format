@@ -1,13 +1,16 @@
 name: markdownlint
 
-on: [push]
+on: [push, pull_request]
+
+permissions:
+  contents: read
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v4 # TODO: pin action to a commit SHA
     - uses: DavidAnson/markdownlint-cli2-action@v20
       with:
         globs: |
-          *.md
+          **/*.md

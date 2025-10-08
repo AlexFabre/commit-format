@@ -1,6 +1,9 @@
 name: Pylint 🐍
 
-on: [push]
+on: [push, pull_request]
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -10,14 +13,17 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false # TODO: pin action to a commit SHA
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5 # TODO: pin action to a commit SHA
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pylint
     - name: Pylint 🐍
       run: |
-        pylint $(git ls-files '*.py')
+        git ls-files -z "*.py" | xargs -0 -- pylint
