@@ -61,7 +61,7 @@ commit-format -ns
 
 ### `-t`, `--template` Template compliance
 
-You can provide a configuration TOML file template to validate the commit
+You can provide a configuration INI file template to validate the commit
 header/footer format and required symbols.
 
 Usage:
@@ -70,7 +70,7 @@ Usage:
 commit-format -t /path/to/.commit-format
 ```
 
-Template schema (TOML):
+Template schema (INI):
 
 - [header]
   - pattern: Regex that the first line (header) must match.
@@ -84,7 +84,7 @@ Template schema (TOML):
 
 Example `.commit-format`:
 
-```toml
+```ini
 [header]
 # header line regex:
 pattern = ^(feat: |fic: |ci: |doc: ).+$
