@@ -201,17 +201,40 @@ class CommitFormat:
             sys.exit(2)
         self.commit_template = cfg
 
-    def _split_message(self, message: str):
+    def _split_message(self, message: str, has_footer: bool):
+        """
+        Splits a message into its header, body, and footer components.
+
+        This function processes a multi-line message string and separates it into
+        three parts: the header, the body, and the footer. The header is always the
+        first line of the message. If `has_footer` is True, the function attempts to
+        identify the last non-empty line as the footer. The body consists of all lines
+        between the header and the footer.
+
+        Args:
+            message (str): The multi-line message to be split.
+            has_footer (bool): A flag indicating whether the message contains a footer.
+
+        Returns:
+            tuple: A tuple containing four elements:
+                - header (str): The first line of the message.
+                - body (list of str): A list of lines representing the body of the message.
+                - footers (list of str): A list containing the footer line if present.
+                - lines (list of str): A list of all lines in the original message.
+
+        """
         lines = message.splitlines()
         line_cnt = len(lines)
+        footer_start = line_cnt
         header = lines[0] if lines else ""
 
-        # Identify the last non-empty line as the potential footer
-        i = line_cnt - 1
-        while i > 0 and lines[i].strip() == "":
-            i -= 1
+        if has_footer:
+            # Identify the last non-empty line as the potential footer
+            i = line_cnt - 1
+            while i > 0 and lines[i].strip() == "":
+                i -= 1
 
-        footer_start = i if i > 0 else line_cnt
+            footer_start = i if i > 0 else line_cnt
 
         # Determine the body by excluding the header and footer
         body = lines[1:footer_start] if line_cnt > 1 else []
@@ -228,7 +251,14 @@ class CommitFormat:
         errors = 0
         cfg = self.commit_template
 
-        header, body, footers, all_lines = self._split_message(commit_message)
+        footer_required = False
+        if cfg.has_section('footer') and cfg.has_option('footer', 'required'):
+            try:
+                footer_required = cfg.getboolean('footer', 'required')
+            except ValueError:
+                footer_required = False
+
+        header, body, footers, all_lines = self._split_message(commit_message, footer_required)
 
         # Header checks
         if cfg.has_section('header') and cfg.has_option('header', 'pattern'):
@@ -268,13 +298,6 @@ class CommitFormat:
                 self.warning(f"Commit {commit}: commit body is empty")
 
         # Footer checks
-        footer_required = False
-        if cfg.has_section('footer') and cfg.has_option('footer', 'required'):
-            try:
-                footer_required = cfg.getboolean('footer', 'required')
-            except ValueError:
-                footer_required = False
-
         if footer_required and len(footers) == 0:
             errors += 1
             self.warning(f"Commit {commit}: missing required footer section")
