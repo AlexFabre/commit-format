@@ -9,7 +9,7 @@ Primarily disigned for to check for spelling mistakes in commit messages,
 
 - Check that each message lines does not exceed a length limit.
 - Check for spelling mistake on commit messages.
-- `NEW` Check commit header/body/footer against a defined template.
+- Check commit header/body/footer against a defined template.
 
 ## Installation
 
@@ -75,24 +75,24 @@ Template schema (TOML):
 - [header]
   - pattern: Regex that the first line (header) must match.
 - [body]
-  - allow_empty: true/false to allow a commit with only a header (no body).
+  - required: (true/false) Require the commit to have a body.
 - [footer]
-  - required: true/false to require a footer section.
+  - required: (true/false) Require the commit to have a footer line.
   - pattern: Regex that each footer line must match.
 
 Example `.commit-format`:
 
 ```toml
 [header]
-# header line regex:
-pattern = ^(feat: |fic: |ci: |doc: ).+$
+# Header line regex:
+pattern = ^(feat: |fix: |ci: |doc: ).+$
 
 [body]
-# Allow empty body commit message. (i.e. single line commit message).
-allow_empty = false
+# Require commit to have a body. (i.e. prevent single line commit message).
+required = true
 
 [footer]
-# Require a footer line
+# Require commit to have a footer line
 required = true
 # Footer line regex
 pattern = ^(Signed-off-by: ).+$

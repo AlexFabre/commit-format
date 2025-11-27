@@ -344,15 +344,21 @@ class CommitFormat:
                 self.info(f"Header: '{header}'")
                 self.info(f"Expected pattern: {pattern}")
 
-        # Body emptiness check
-        allow_empty = True
+        # Body check
+        body_required = True
         if cfg.has_section("body") and cfg.has_option("body", "allow_empty"):
             try:
-                allow_empty = cfg.getboolean("body", "allow_empty")
+                body_required = not cfg.getboolean("body", "allow_empty")
             except ValueError:
-                allow_empty = True
+                body_required = True
 
-        if not allow_empty:
+        if cfg.has_section("body") and cfg.has_option("body", "required"):
+            try:
+                body_required = cfg.getboolean("body", "required")
+            except ValueError:
+                body_required = True
+
+        if body_required:
             body_has_content = any(line.strip() != "" for line in body)
             if not body_has_content:
                 errors |= Error.BODY_MISSING
@@ -505,6 +511,13 @@ def main():
             commit_format.info(f"{GREEN}Commit {commit} OK{RESET}")
         else:
             error_found += error_on_commit
+
+    # Warnings for deprecated options:
+    cfg = commit_format.commit_template
+    if cfg.has_section("body") and cfg.has_option("body", "allow_empty"):
+        commit_format.warning(
+            "Template option 'Body::allow_empty' is deprecated. Use 'Body::required' instead"
+        )
 
     sys.exit(error_found)
 

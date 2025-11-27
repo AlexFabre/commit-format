@@ -1,13 +1,13 @@
 [header]
-# header line regex:
+# Header line regex:
 pattern = ^(option: |requirements: |ci: |doc: |release: |script: |format: |test: |quality: ).+$
 
 [body]
-# Allow empty body commit message. (i.e. single line commit message).
-allow_empty = false
+# Require commit to have a body. (i.e. prevent single line commit message).
+required = true
 
 [footer]
-# Require a footer line
+# Require commit to have a footer line
 required = true
 # Footer line regex
 pattern = ^(Signed-off-by: |Co-authored-by: |Refs: |Fixes: ).+$
