@@ -109,6 +109,15 @@ class TestSplitMessage:
         assert footer == "Signed-off-by: Author"
         assert len(lines) == 6
 
+    def test_multi_line_header(self):
+        cf = CommitFormat()
+        message = "fix: bug\nheader line 2\n\nBody text.\nSigned-off-by: Author\n\n"
+        header, body, footer, lines = cf.split_message(message, True)
+        assert header == "fix: bug header line 2"
+        assert body == ["", "Body text."]
+        assert footer == "Signed-off-by: Author"
+        assert len(lines) == 6
+
     def test_empty_message(self):
         cf = CommitFormat()
         header, body, footer, lines = cf.split_message("", False)
@@ -164,7 +173,6 @@ pattern = ^(fix: |feat: |doc: |ci: ).+$
 
 [body]
 allow_empty = false
-blank_line_after_header = true
 
 [footer]
 required = true

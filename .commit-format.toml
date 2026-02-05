@@ -5,8 +5,6 @@ pattern = ^(option: |requirements: |ci: |doc: |release: |script: |format: |test:
 [body]
 # Allow empty body commit message. (i.e. single line commit message).
 allow_empty = false
-# Require that header line and body line are separated by an empty line.
-blank_line_after_header = true
 
 [footer]
 # Require a footer line
