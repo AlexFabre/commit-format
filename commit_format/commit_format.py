@@ -20,12 +20,14 @@ def get_version() -> str:
     except PackageNotFoundError:
         return "dev"
 
+
 # ANSI escape codes for colors
-RED = '\033[91m'
-YELLOW = '\033[93m'
-GREEN = '\033[92m'
-BLUE = '\033[94m'
-RESET = '\033[0m'
+RED = "\033[91m"
+YELLOW = "\033[93m"
+GREEN = "\033[92m"
+BLUE = "\033[94m"
+RESET = "\033[0m"
+
 
 def is_url(url: str) -> bool:
     try:
@@ -34,18 +36,20 @@ def is_url(url: str) -> bool:
     except ValueError:
         return False
 
+
 def contains_url(string: str) -> bool:
-    if '/' not in string:
+    if "/" not in string:
         return False
 
     # Split on '(', ')', '[', ']', and space ' '
-    word_list = re.split(r'[()\[\]\s]', string)
+    word_list = re.split(r"[()\[\]\s]", string)
 
     for w in word_list:
         if is_url(w):
             return True
 
     return False
+
 
 class CommitFormat:
     def __init__(self, verbosity=False):
@@ -60,17 +64,20 @@ class CommitFormat:
         """Prints the given text in yellow."""
         print(f"{YELLOW}{text}{RESET}")
 
-    def highlight_words_in_txt(self, text: str, words="", highlight_color=f"{RED}") -> str:
+    def highlight_words_in_txt(
+        self, text: str, words="", highlight_color=f"{RED}"
+    ) -> str:
         """Prints the given text and highlights the words in the list."""
         for word in words:
             word = self.remove_ansi_color_codes(word)
-            text = text[::-1].replace(f"{word}"[::-1],
-                                      f"{highlight_color}{word}{RESET}"[::-1], 1)[::-1]
+            text = text[::-1].replace(
+                f"{word}"[::-1], f"{highlight_color}{word}{RESET}"[::-1], 1
+            )[::-1]
         return text
 
     def remove_ansi_color_codes(self, text: str) -> str:
-        ansi_escape_pattern = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
-        return ansi_escape_pattern.sub('', text)
+        ansi_escape_pattern = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
+        return ansi_escape_pattern.sub("", text)
 
     def info(self, text: str):
         """Prints the given text in blue."""
@@ -83,42 +90,66 @@ class CommitFormat:
 
     def get_current_branch(self) -> str:
         self.debug("get_current_branch: git rev-parse --abbrev-ref HEAD")
-        result = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
-                                capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         return result.stdout.strip()
 
     def list_unique_commits(self, current_branch, base_branch) -> list:
         if current_branch != base_branch:
-            self.debug("list_unique_commits: git log --pretty=format:%h "
-                       f"{base_branch}..{current_branch}")
-            result = subprocess.run(['git', 'log', '--pretty=format:%h',
-                                     f'{base_branch}..{current_branch}'],
-                                     capture_output=True,
-                                     text=True, check=False)
+            self.debug(
+                "list_unique_commits: git log --pretty=format:%h "
+                f"{base_branch}..{current_branch}"
+            )
+            result = subprocess.run(
+                [
+                    "git",
+                    "log",
+                    "--pretty=format:%h",
+                    f"{base_branch}..{current_branch}",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
             return result.stdout.split()
 
         self.error(f"Running on branch {base_branch}. Abort checking commits.")
         sys.exit(0)
 
     def list_all_commits(self) -> list:
-        result = subprocess.run(['git', 'log', '--pretty=format:%h'],
-                                capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            ["git", "log", "--pretty=format:%h"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         return result.stdout.split()
 
     def get_commit_message(self, commit_sha: str) -> str:
-        result = subprocess.run(['git', 'show', '-s', '--format=%B', commit_sha],
-                                capture_output=True,
-                                text=True, check=False)
+        result = subprocess.run(
+            ["git", "show", "-s", "--format=%B", commit_sha],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         return result.stdout.strip()
 
     def run_codespell(self, message: str) -> tuple:
-        result = subprocess.run(['codespell', '-c', '-', '-'], input=message,
-                                capture_output=True,
-                                text=True, check=False)
-        lines = result.stdout.strip().split('\n')
+        result = subprocess.run(
+            ["codespell", "-c", "-", "-"],
+            input=message,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        lines = result.stdout.strip().split("\n")
         selected_lines = [line for index, line in enumerate(lines) if index % 2 != 0]
         faulty_words = [line.split()[0] for line in selected_lines if line]
-        return '\n'.join(selected_lines), faulty_words
+        return "\n".join(selected_lines), faulty_words
 
     def spell_check(self, commit: str, commit_message: str) -> bool:
         spell_error = 0
@@ -128,7 +159,9 @@ class CommitFormat:
         if codespell_proposition:
             spell_error += 1
             self.warning(f"Commit {commit} has spelling mistakes")
-            self.info(self.highlight_words_in_txt(f"---\n{commit_message}", faulty_words))
+            self.info(
+                self.highlight_words_in_txt(f"---\n{commit_message}", faulty_words)
+            )
             self.info(f"---\nCodespell fix proposition:\n{codespell_proposition}\n---")
 
         # Run another spelling tool:
@@ -150,7 +183,7 @@ class CommitFormat:
         highlighted_commit_message = ""
 
         # Split the commit message into lines
-        lines = commit_message.split('\n')
+        lines = commit_message.split("\n")
 
         # Check if any line exceeds the length limit
         for line in lines:
@@ -179,9 +212,9 @@ class CommitFormat:
                 # Split the line into words
                 while len(line_copy) > length_limit:
                     # Find the last space in the line
-                    last_space_index = line_copy.rfind(' ')
+                    last_space_index = line_copy.rfind(" ")
 
-                    removed_word = line_copy[(last_space_index+1):]
+                    removed_word = line_copy[(last_space_index + 1) :]
                     removed_words.append(removed_word)
 
                     # Remove the last word by slicing up to the last space (if there was any space)
@@ -190,7 +223,9 @@ class CommitFormat:
                     else:
                         line_copy = line_copy[:last_space_index]
 
-            highlighted_commit_message += f"{self.highlight_words_in_txt(line, removed_words)}"
+            highlighted_commit_message += (
+                f"{self.highlight_words_in_txt(line, removed_words)}"
+            )
 
         if length_exceeded:
             if url_format_error is True:
@@ -248,7 +283,9 @@ class CommitFormat:
         body = lines[1:footer_start] if line_cnt > 1 else []
         footers = [lines[footer_start]] if footer_start < line_cnt else []
 
-        self.debug(f'--HEADER--\n{header}\n---BODY---\n{body}\n--FOOTER--\n{footers}\n----------')
+        self.debug(
+            f"--HEADER--\n{header}\n---BODY---\n{body}\n--FOOTER--\n{footers}\n----------"
+        )
 
         return header, body, footers, lines
 
@@ -260,17 +297,19 @@ class CommitFormat:
         cfg = self.commit_template
 
         footer_required = False
-        if cfg.has_section('footer') and cfg.has_option('footer', 'required'):
+        if cfg.has_section("footer") and cfg.has_option("footer", "required"):
             try:
-                footer_required = cfg.getboolean('footer', 'required')
+                footer_required = cfg.getboolean("footer", "required")
             except ValueError:
                 footer_required = False
 
-        header, body, footers, all_lines = self._split_message(commit_message, footer_required)
+        header, body, footers, all_lines = self._split_message(
+            commit_message, footer_required
+        )
 
         # Header checks
-        if cfg.has_section('header') and cfg.has_option('header', 'pattern'):
-            pattern = cfg.get('header', 'pattern')
+        if cfg.has_section("header") and cfg.has_option("header", "pattern"):
+            pattern = cfg.get("header", "pattern")
             if not re.match(pattern, header):
                 errors += 1
                 self.warning(f"Commit {commit}: header does not match required pattern")
@@ -280,9 +319,11 @@ class CommitFormat:
         # Body separation check
 
         blank_after_header = False
-        if cfg.has_section('body') and cfg.has_option('body', 'blank_line_after_header'):
+        if cfg.has_section("body") and cfg.has_option(
+            "body", "blank_line_after_header"
+        ):
             try:
-                blank_after_header = cfg.getboolean('body', 'blank_line_after_header')
+                blank_after_header = cfg.getboolean("body", "blank_line_after_header")
             except ValueError:
                 blank_after_header = False
 
@@ -293,9 +334,9 @@ class CommitFormat:
 
         # Body emptiness check
         allow_empty = True
-        if cfg.has_section('body') and cfg.has_option('body', 'allow_empty'):
+        if cfg.has_section("body") and cfg.has_option("body", "allow_empty"):
             try:
-                allow_empty = cfg.getboolean('body', 'allow_empty')
+                allow_empty = cfg.getboolean("body", "allow_empty")
             except ValueError:
                 allow_empty = True
 
@@ -311,10 +352,13 @@ class CommitFormat:
             self.warning(f"Commit {commit}: missing required footer section")
 
         # Footer line pattern
-        if (footer_required and len(footers) > 0
-            and cfg.has_section('footer')
-            and cfg.has_option('footer', 'pattern')):
-            fpattern = cfg.get('footer', 'pattern')
+        if (
+            footer_required
+            and len(footers) > 0
+            and cfg.has_section("footer")
+            and cfg.has_option("footer", "pattern")
+        ):
+            fpattern = cfg.get("footer", "pattern")
             compiled = re.compile(fpattern)
             for line in footers:
                 if line.strip() == "":
@@ -327,33 +371,51 @@ class CommitFormat:
 
         return errors
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Perform various checks on commit messages.")
-    parser.add_argument('-V', '--version',
-                        action='version',
-                        version=f'%(prog)s {get_version()}')
-    parser.add_argument('-ns', '--no-spelling',
-                        action='store_true',
-                        help="disable checking misspelled words")
-    parser.add_argument('-l', '--limit',
-                        type=int,
-                        default=72,
-                        help="commit lines maximum length. Default: '72' ('0' => no line limit)")
-    parser.add_argument('-t', '--template',
-                        type=str,
-                        default=None,
-                        help="path to a commit-format template file to validate header/body/footer "
-                        "commit message structure")
-    parser.add_argument('-b', '--base',
-                        type=str,
-                        default="main",
-                        help="name of the base branch. Default 'main'")
-    parser.add_argument('-a', '--all',
-                        action='store_true',
-                        help="check all commits (including base branch commits)")
-    parser.add_argument('-v', '--verbosity',
-                        action='store_true',
-                        help="increase output verbosity")
+    parser = argparse.ArgumentParser(
+        description="Perform various checks on commit messages."
+    )
+    parser.add_argument(
+        "-V", "--version", action="version", version=f"%(prog)s {get_version()}"
+    )
+    parser.add_argument(
+        "-ns",
+        "--no-spelling",
+        action="store_true",
+        help="disable checking misspelled words",
+    )
+    parser.add_argument(
+        "-l",
+        "--limit",
+        type=int,
+        default=72,
+        help="commit lines maximum length. Default: '72' ('0' => no line limit)",
+    )
+    parser.add_argument(
+        "-t",
+        "--template",
+        type=str,
+        default=None,
+        help="path to a commit-format template file to validate header/body/footer "
+        "commit message structure",
+    )
+    parser.add_argument(
+        "-b",
+        "--base",
+        type=str,
+        default="main",
+        help="name of the base branch. Default 'main'",
+    )
+    parser.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        help="check all commits (including base branch commits)",
+    )
+    parser.add_argument(
+        "-v", "--verbosity", action="store_true", help="increase output verbosity"
+    )
     args = parser.parse_args()
 
     commit_format = CommitFormat(verbosity=args.verbosity)
@@ -373,19 +435,25 @@ def main():
         commit_list = commit_format.list_unique_commits(current_branch, args.base)
 
     if not commit_list:
-        commit_format.error(f"Error:{RESET} branch {GREEN}{current_branch}{RESET} "
-                            f"has no diff commit with base branch {GREEN}{args.base}{RESET}")
+        commit_format.error(
+            f"Error:{RESET} branch {GREEN}{current_branch}{RESET} "
+            f"has no diff commit with base branch {GREEN}{args.base}{RESET}"
+        )
         sys.exit(1)
 
-    commit_format.debug(f"Checking {GREEN}{len(commit_list)}{RESET} "
-                        "commits on branch {GREEN}{current_branch}{RESET}")
+    commit_format.debug(
+        f"Checking {GREEN}{len(commit_list)}{RESET} "
+        "commits on branch {GREEN}{current_branch}{RESET}"
+    )
 
     for commit in commit_list:
         error_on_commit = 0
         commit_message = commit_format.get_commit_message(commit)
         if args.no_spelling is False:
             error_on_commit += commit_format.spell_check(commit, commit_message)
-        error_on_commit += commit_format.lines_length(commit, commit_message, args.limit)
+        error_on_commit += commit_format.lines_length(
+            commit, commit_message, args.limit
+        )
         if commit_format.commit_template is not None:
             error_on_commit += commit_format.template_check(commit, commit_message)
 
@@ -396,5 +464,6 @@ def main():
 
     sys.exit(error_found)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
