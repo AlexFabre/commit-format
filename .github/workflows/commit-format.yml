@@ -1,4 +1,4 @@
-name: commit-format 🔍
+name: Lint commits
 
 on:
   push:
