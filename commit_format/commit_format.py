@@ -250,10 +250,13 @@ class CommitFormat:
         Splits a message into its header, body, and footer components.
 
         This function processes a multi-line message string and separates it into
-        three parts: the header, the body, and the footer. The header is always the
-        first line of the message. If `has_footer` is True, the function attempts to
-        identify the last non-empty line as the footer. The body consists of all lines
-        between the header and the footer.
+        three parts: the header, the body, and the footer.
+        1. The header is the first line(s) of the message until two consecutive
+           line breaks are detected.
+        2. Then, if `has_footer` option is set to 'True', the function identifies
+           the last non-empty line as the footer.
+        3. Finally, the body consists of all lines after the header, excluding the
+           footer, if it exists.
 
         Args:
             message (str): The multi-line message to be split.
@@ -261,7 +264,7 @@ class CommitFormat:
 
         Returns:
             tuple: A tuple containing four elements:
-                - header (str): The first line of the message.
+                - header (str): The first line(s) of the commit message.
                 - body (list of str): A list of lines representing the body of the message.
                 - footer (str): The footer line if present.
                 - lines (list of str): A list of all lines in the original message.
@@ -276,6 +279,12 @@ class CommitFormat:
         footer_start = line_cnt
         header = lines[0]
 
+        i = 1
+        while i < len(lines) and lines[i] != "":
+            header += " " + lines[i]
+            i += 1
+        body_start = i
+
         if has_footer:
             # Identify the last non-empty line as the potential footer
             i = line_cnt - 1
@@ -285,7 +294,7 @@ class CommitFormat:
                 footer_start = i
 
         # Determine the body by excluding the header and footer
-        body = lines[1:footer_start] if line_cnt > 1 else []
+        body = lines[body_start:footer_start] if line_cnt > 1 else []
         footer = lines[footer_start] if footer_start < line_cnt else ""
 
         self.debug(
@@ -308,9 +317,7 @@ class CommitFormat:
             except ValueError:
                 footer_required = False
 
-        header, body, footer, all_lines = self.split_message(
-            commit_message, footer_required
-        )
+        header, body, footer, *_ = self.split_message(commit_message, footer_required)
 
         # Header checks
         if cfg.has_section("header") and cfg.has_option("header", "pattern"):
@@ -320,22 +327,6 @@ class CommitFormat:
                 self.warning(f"Commit {commit}: header does not match required pattern")
                 self.info(f"Header: '{header}'")
                 self.info(f"Expected pattern: {pattern}")
-
-        # Body separation check
-
-        blank_after_header = False
-        if cfg.has_section("body") and cfg.has_option(
-            "body", "blank_line_after_header"
-        ):
-            try:
-                blank_after_header = cfg.getboolean("body", "blank_line_after_header")
-            except ValueError:
-                blank_after_header = False
-
-        if blank_after_header and len(all_lines) > 1:
-            if all_lines[1].strip() != "":
-                errors += 1
-                self.warning(f"Commit {commit}: missing blank line after header")
 
         # Body emptiness check
         allow_empty = True

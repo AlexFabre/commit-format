@@ -76,8 +76,6 @@ Template schema (TOML):
   - pattern: Regex that the first line (header) must match.
 - [body]
   - allow_empty: true/false to allow a commit with only a header (no body).
-  - blank_line_after_header: true/false to enforce a blank line between header
-  and body.
 - [footer]
   - required: true/false to require a footer section.
   - pattern: Regex that each footer line must match.
@@ -92,8 +90,6 @@ pattern = ^(feat: |fic: |ci: |doc: ).+$
 [body]
 # Allow empty body commit message. (i.e. single line commit message).
 allow_empty = false
-# Require that header line and body line are separated by an empty line.
-blank_line_after_header = true
 
 [footer]
 # Require a footer line
