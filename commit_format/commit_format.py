@@ -10,6 +10,7 @@ import subprocess
 import sys
 import re
 import configparser
+import os
 from importlib.metadata import version, PackageNotFoundError
 from urllib.parse import urlparse
 
@@ -372,6 +373,35 @@ class CommitFormat:
         return errors
 
 
+def find_config_file() -> str | None:
+    """Auto-discover config file in current directory or git root."""
+    candidates = [".commit-format", ".commit-format.toml"]
+
+    # Check current directory first
+    for candidate in candidates:
+        if os.path.isfile(candidate):
+            return candidate
+
+    # Check git root directory
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            git_root = result.stdout.strip()
+            for candidate in candidates:
+                path = os.path.join(git_root, candidate)
+                if os.path.isfile(path):
+                    return path
+    except FileNotFoundError:
+        pass
+
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Perform various checks on commit messages."
@@ -420,8 +450,14 @@ def main():
 
     commit_format = CommitFormat(verbosity=args.verbosity)
 
-    if args.template:
-        commit_format.load_template(args.template)
+    template_path = args.template
+    if not template_path:
+        template_path = find_config_file()
+        if template_path:
+            commit_format.debug(f"Auto-discovered config: {template_path}")
+
+    if template_path:
+        commit_format.load_template(template_path)
 
     error_found = 0
     current_branch = commit_format.get_current_branch()
