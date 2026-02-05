@@ -10,7 +10,15 @@ import subprocess
 import sys
 import re
 import configparser
+from importlib.metadata import version, PackageNotFoundError
 from urllib.parse import urlparse
+
+
+def get_version() -> str:
+    try:
+        return version("commit_format")
+    except PackageNotFoundError:
+        return "dev"
 
 # ANSI escape codes for colors
 RED = '\033[91m'
@@ -321,6 +329,9 @@ class CommitFormat:
 
 def main():
     parser = argparse.ArgumentParser(description="Perform various checks on commit messages.")
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version=f'%(prog)s {get_version()}')
     parser.add_argument('-ns', '--no-spelling',
                         action='store_true',
                         help="disable checking misspelled words")
