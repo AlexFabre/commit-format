@@ -17,9 +17,20 @@ dependencies = [
   "codespell"
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/AlexFabre/commit-format"
 Issues = "https://github.com/AlexFabre/commit-format/issues"
 
 [project.scripts]
 commit-format = "commit_format.commit_format:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+python_classes = "Test*"
