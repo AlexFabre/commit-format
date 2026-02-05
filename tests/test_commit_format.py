@@ -105,6 +105,7 @@ class TestSplitMessage:
         message = "fix: bug\n\nBody text.\n\nSigned-off-by: Author\n\n"
         header, body, footers, lines = cf._split_message(message, True)
         assert header == "fix: bug"
+        assert body == ["", "Body text.", ""]
         assert footers == ["Signed-off-by: Author"]
 
     def test_empty_message(self):
@@ -136,10 +137,9 @@ class TestLinesLength:
 
     def test_url_line_allowed(self):
         cf = CommitFormat()
-        message = (
-            "fix: add reference\n\n[1] https://example.com/very/long/path/to/resource"
-        )
-        errors = cf.lines_length("abc123", message, 72)
+        message = "fix: add reference\n\n[1] \
+            https://example.com/very/long/path/to/resource/with/very/long/url"
+        errors = cf.lines_length("abc123", message, 50)
         assert errors == 0
 
     def test_url_wrong_format(self):
@@ -255,13 +255,12 @@ class TestHighlightWordsInTxt:
     def test_highlight_single_word(self):
         cf = CommitFormat()
         result = cf.highlight_words_in_txt("hello world", ["world"])
-        assert "world" in result
-        assert "\033[91m" in result  # RED color code
+        assert result == "hello \033[91mworld\033[0m"
 
     def test_highlight_multiple_words(self):
         cf = CommitFormat()
         result = cf.highlight_words_in_txt("foo bar baz", ["foo", "baz"])
-        assert "\033[91m" in result
+        assert result == "\033[91mfoo\033[0m bar \033[91mbaz\033[0m"
 
     def test_no_words_to_highlight(self):
         cf = CommitFormat()
