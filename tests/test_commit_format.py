@@ -1,7 +1,6 @@
 # pylint: disable=C0114
 # pylint: disable=C0115
 # pylint: disable=C0116
-# pylint: disable=W0212
 # pylint: disable=W0612
 # pylint: disable=R0903
 
@@ -76,7 +75,7 @@ class TestCommitFormatInit:
 class TestSplitMessage:
     def test_header_only(self):
         cf = CommitFormat()
-        header, body, footers, lines = cf._split_message("fix: simple fix", False)
+        header, body, footers, lines = cf.split_message("fix: simple fix", False)
         assert header == "fix: simple fix"
         assert body == []
         assert not footers
@@ -85,7 +84,7 @@ class TestSplitMessage:
     def test_header_and_body(self):
         cf = CommitFormat()
         message = "fix: bug fix\n\nThis fixes the bug in the parser."
-        header, body, footers, lines = cf._split_message(message, False)
+        header, body, footers, lines = cf.split_message(message, False)
         assert header == "fix: bug fix"
         assert body == ["", "This fixes the bug in the parser."]
         assert not footers
@@ -95,7 +94,7 @@ class TestSplitMessage:
         message = (
             "feat: new feature\n\nAdded new functionality.\n\nSigned-off-by: Author"
         )
-        header, body, footers, lines = cf._split_message(message, True)
+        header, body, footers, lines = cf.split_message(message, True)
         assert header == "feat: new feature"
         assert body == ["", "Added new functionality.", ""]
         assert footers == ["Signed-off-by: Author"]
@@ -103,14 +102,14 @@ class TestSplitMessage:
     def test_footer_with_trailing_empty_lines(self):
         cf = CommitFormat()
         message = "fix: bug\n\nBody text.\n\nSigned-off-by: Author\n\n"
-        header, body, footers, lines = cf._split_message(message, True)
+        header, body, footers, lines = cf.split_message(message, True)
         assert header == "fix: bug"
         assert body == ["", "Body text.", ""]
         assert footers == ["Signed-off-by: Author"]
 
     def test_empty_message(self):
         cf = CommitFormat()
-        header, body, footers, lines = cf._split_message("", False)
+        header, body, footers, lines = cf.split_message("", False)
         assert header == ""
         assert body == []
         assert not footers
