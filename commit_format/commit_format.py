@@ -245,7 +245,7 @@ class CommitFormat:
             sys.exit(2)
         self.commit_template = cfg
 
-    def _split_message(self, message: str, has_footer: bool):
+    def split_message(self, message: str, has_footer: bool):
         """
         Splits a message into its header, body, and footer components.
 
@@ -304,7 +304,7 @@ class CommitFormat:
             except ValueError:
                 footer_required = False
 
-        header, body, footers, all_lines = self._split_message(
+        header, body, footers, all_lines = self.split_message(
             commit_message, footer_required
         )
 
