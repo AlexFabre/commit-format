@@ -1,7 +1,6 @@
 # pylint: disable=C0114
 # pylint: disable=C0115
 # pylint: disable=C0116
-# pylint: disable=W0612
 # pylint: disable=R0903
 
 import pytest
@@ -88,6 +87,7 @@ class TestSplitMessage:
         assert header == "fix: bug fix"
         assert body == ["", "This fixes the bug in the parser."]
         assert not footers
+        assert len(lines) == 3
 
     def test_header_body_and_footer(self):
         cf = CommitFormat()
@@ -98,6 +98,7 @@ class TestSplitMessage:
         assert header == "feat: new feature"
         assert body == ["", "Added new functionality.", ""]
         assert footers == ["Signed-off-by: Author"]
+        assert len(lines) == 5
 
     def test_footer_with_trailing_empty_lines(self):
         cf = CommitFormat()
@@ -106,6 +107,7 @@ class TestSplitMessage:
         assert header == "fix: bug"
         assert body == ["", "Body text.", ""]
         assert footers == ["Signed-off-by: Author"]
+        assert len(lines) == 6
 
     def test_empty_message(self):
         cf = CommitFormat()
@@ -113,6 +115,7 @@ class TestSplitMessage:
         assert header == ""
         assert body == []
         assert not footers
+        assert len(lines) == 0
 
 
 class TestLinesLength:
