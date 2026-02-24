@@ -13,6 +13,7 @@ import configparser
 import os
 from importlib.metadata import version, PackageNotFoundError
 from urllib.parse import urlparse
+from enum import IntFlag
 
 
 def get_version() -> str:
@@ -28,6 +29,18 @@ YELLOW = "\033[93m"
 GREEN = "\033[92m"
 BLUE = "\033[94m"
 RESET = "\033[0m"
+
+
+class Error(IntFlag):
+    """Error codes for commit format validation (bitmask flags)."""
+
+    HEADER_PATTERN_MISMATCH = 0x01
+    BODY_MISSING = 0x02
+    FOOTER_MISSING = 0x04
+    FOOTER_PATTERN_MISMATCH = 0x08
+    SPELLING_MISTAKES = 0x10
+    LINE_LENGTH = 0x20
+    URL_FORMAT = 0x40
 
 
 def is_url(url: str) -> bool:
@@ -152,13 +165,13 @@ class CommitFormat:
         faulty_words = [line.split()[0] for line in selected_lines if line]
         return "\n".join(selected_lines), faulty_words
 
-    def spell_check(self, commit: str, commit_message: str) -> bool:
+    def spell_check(self, commit: str, commit_message: str) -> int:
         spell_error = 0
 
         # Run codespell
         codespell_proposition, faulty_words = self.run_codespell(commit_message)
         if codespell_proposition:
-            spell_error += 1
+            spell_error |= Error.SPELLING_MISTAKES
             self.warning(f"Commit {commit} has spelling mistakes")
             self.info(
                 self.highlight_words_in_txt(f"---\n{commit_message}", faulty_words)
@@ -170,7 +183,7 @@ class CommitFormat:
 
         return spell_error
 
-    def lines_length(self, commit: str, commit_message: str, length_limit) -> bool:
+    def lines_length(self, commit: str, commit_message: str, length_limit) -> int:
 
         if length_limit == 0:
             return 0
@@ -228,14 +241,17 @@ class CommitFormat:
                 f"{self.highlight_words_in_txt(line, removed_words)}"
             )
 
+        err = 0
         if length_exceeded:
             if url_format_error is True:
                 self.warning(f"Commit {commit}: bad URL format:\n[index] url://...")
+                err = Error.URL_FORMAT
             else:
                 self.warning(f"Commit {commit}: exceeds {length_limit} chars limit")
+                err = Error.LINE_LENGTH
             self.info(f"---\n{highlighted_commit_message}\n---")
 
-        return length_exceeded
+        return err
 
     def load_template(self, template_path: str):
         cfg = configparser.ConfigParser()
@@ -323,7 +339,7 @@ class CommitFormat:
         if cfg.has_section("header") and cfg.has_option("header", "pattern"):
             pattern = cfg.get("header", "pattern")
             if not re.match(pattern, header):
-                errors += 1
+                errors |= Error.HEADER_PATTERN_MISMATCH
                 self.warning(f"Commit {commit}: header does not match required pattern")
                 self.info(f"Header: '{header}'")
                 self.info(f"Expected pattern: {pattern}")
@@ -339,12 +355,12 @@ class CommitFormat:
         if not allow_empty:
             body_has_content = any(line.strip() != "" for line in body)
             if not body_has_content:
-                errors += 1
+                errors |= Error.BODY_MISSING
                 self.warning(f"Commit {commit}: commit body is empty")
 
         # Footer checks
         if footer_required and footer == "":
-            errors += 1
+            errors |= Error.FOOTER_MISSING
             self.warning(f"Commit {commit}: missing required footer section")
 
         # Footer line pattern
@@ -357,7 +373,7 @@ class CommitFormat:
             fpattern = cfg.get("footer", "pattern")
             compiled = re.compile(fpattern)
             if not compiled.match(footer):
-                errors += 1
+                errors |= Error.FOOTER_PATTERN_MISMATCH
                 self.warning(f"Commit {commit}: footer line does not match pattern")
                 self.info(f"Line: '{footer}'")
                 self.info(f"Expected pattern: {fpattern}")

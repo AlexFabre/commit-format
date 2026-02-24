@@ -11,6 +11,7 @@ from commit_format.commit_format import (
     CommitFormat,
     find_config_file,
     get_version,
+    Error,
 )
 
 
@@ -138,7 +139,7 @@ class TestLinesLength:
         cf = CommitFormat()
         message = "fix: bug\n\n" + "a" * 80
         errors = cf.lines_length("abc123", message, 72)
-        assert errors == 1
+        assert errors == Error.LINE_LENGTH
 
     def test_limit_disabled(self):
         cf = CommitFormat()
@@ -160,7 +161,7 @@ class TestLinesLength:
             "fix: refs\n\nSee this very long line with url https://example.com/path"
         )
         errors = cf.lines_length("abc123", message, 50)
-        assert errors == 1
+        assert errors & Error.URL_FORMAT
 
 
 class TestTemplateCheck:
@@ -189,27 +190,27 @@ pattern = ^(Signed-off-by: |Refs: ).+$
     def test_invalid_header_pattern(self, cf_with_template):
         message = "broken: wrong prefix\n\nBody.\n\nSigned-off-by: Author"
         errors = cf_with_template.template_check("abc123", message)
-        assert errors >= 1
+        assert errors & Error.HEADER_PATTERN_MISMATCH
 
     def test_missing_blank_line_after_header(self, cf_with_template):
         message = "fix: bug\nNo blank line here.\n\nSigned-off-by: Author"
         errors = cf_with_template.template_check("abc123", message)
-        assert errors >= 1
+        assert errors & Error.BODY_MISSING
 
-    def test_empty_body_not_allowed(self, cf_with_template):
+    def test_empty_body(self, cf_with_template):
         message = "fix: bug\n\n\n\nSigned-off-by: Author"
         errors = cf_with_template.template_check("abc123", message)
-        assert errors >= 1
+        assert errors & Error.BODY_MISSING
 
     def test_missing_footer(self, cf_with_template):
         message = "fix: bug\n\nBody content here."
         errors = cf_with_template.template_check("abc123", message)
-        assert errors >= 1
+        assert errors & Error.FOOTER_PATTERN_MISMATCH
 
     def test_invalid_footer_pattern(self, cf_with_template):
         message = "fix: bug\n\nBody content.\n\nInvalid-footer: Author"
         errors = cf_with_template.template_check("abc123", message)
-        assert errors >= 1
+        assert errors & Error.FOOTER_PATTERN_MISMATCH
 
     def test_no_template_loaded(self):
         cf = CommitFormat()
