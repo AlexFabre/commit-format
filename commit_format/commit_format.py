@@ -327,11 +327,8 @@ class CommitFormat:
         cfg = self.commit_template
 
         footer_required = False
-        if cfg.has_section("footer") and cfg.has_option("footer", "required"):
-            try:
-                footer_required = cfg.getboolean("footer", "required")
-            except ValueError:
-                footer_required = False
+        if cfg.has_section("footer") and cfg.has_option("footer", "pattern"):
+            footer_required = True
 
         header, body, footer, *_ = self.split_message(commit_message, footer_required)
 
@@ -370,18 +367,13 @@ class CommitFormat:
             self.warning(f"Commit {commit}: missing required footer section")
 
         # Footer line pattern
-        if (
-            footer_required
-            and footer != ""
-            and cfg.has_section("footer")
-            and cfg.has_option("footer", "pattern")
-        ):
+        if footer_required and footer != "":
             fpattern = cfg.get("footer", "pattern")
             compiled = re.compile(fpattern)
             if not compiled.match(footer):
                 errors |= Error.FOOTER_PATTERN_MISMATCH
                 self.warning(f"Commit {commit}: footer line does not match pattern")
-                self.info(f"Line: '{footer}'")
+                self.info(f"Footer: '{footer}'")
                 self.info(f"Expected pattern: {fpattern}")
 
         return errors

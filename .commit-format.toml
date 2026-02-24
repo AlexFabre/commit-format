@@ -7,7 +7,5 @@ pattern = ^(option: |requirements: |ci: |doc: |release: |script: |format: |test:
 required = true
 
 [footer]
-# Require commit to have a footer line
-required = true
 # Footer line regex
 pattern = ^(Signed-off-by: |Co-authored-by: |Refs: |Fixes: ).+$
