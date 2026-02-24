@@ -77,8 +77,7 @@ Template schema (TOML):
 - [body]
   - required: (true/false) Require the commit to have a body.
 - [footer]
-  - required: (true/false) Require the commit to have a footer line.
-  - pattern: Regex that each footer line must match.
+  - pattern: Regex that the last line (footer) must match.
 
 Example `.commit-format`:
 
@@ -92,8 +91,6 @@ pattern = ^(feat: |fix: |ci: |doc: ).+$
 required = true
 
 [footer]
-# Require commit to have a footer line
-required = true
 # Footer line regex
 pattern = ^(Signed-off-by: ).+$
 
