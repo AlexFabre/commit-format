@@ -1,6 +1,6 @@
 [project]
 name = "commit_format"
-version = "0.2.4"
+version = "0.2.5"
 authors = [
   { name="Alex Fabre", email="m.alexfabre@gmail.com" },
 ]
