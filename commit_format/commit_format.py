@@ -263,7 +263,7 @@ class CommitFormat:
             tuple: A tuple containing four elements:
                 - header (str): The first line of the message.
                 - body (list of str): A list of lines representing the body of the message.
-                - footers (list of str): A list containing the footer line if present.
+                - footer (str): The footer line if present.
                 - lines (list of str): A list of all lines in the original message.
 
         """
@@ -286,13 +286,13 @@ class CommitFormat:
 
         # Determine the body by excluding the header and footer
         body = lines[1:footer_start] if line_cnt > 1 else []
-        footers = [lines[footer_start]] if footer_start < line_cnt else []
+        footer = lines[footer_start] if footer_start < line_cnt else ""
 
         self.debug(
-            f"--HEADER--\n{header}\n---BODY---\n{body}\n--FOOTER--\n{footers}\n----------"
+            f"--HEADER--\n{header}\n---BODY---\n{body}\n--FOOTER--\n{footer}\n----------"
         )
 
-        return header, body, footers, lines
+        return header, body, footer, lines
 
     def template_check(self, commit: str, commit_message: str) -> int:
         if not self.commit_template:
@@ -308,7 +308,7 @@ class CommitFormat:
             except ValueError:
                 footer_required = False
 
-        header, body, footers, all_lines = self.split_message(
+        header, body, footer, all_lines = self.split_message(
             commit_message, footer_required
         )
 
@@ -352,27 +352,24 @@ class CommitFormat:
                 self.warning(f"Commit {commit}: commit body is empty")
 
         # Footer checks
-        if footer_required and len(footers) == 0:
+        if footer_required and footer == "":
             errors += 1
             self.warning(f"Commit {commit}: missing required footer section")
 
         # Footer line pattern
         if (
             footer_required
-            and len(footers) > 0
+            and footer != ""
             and cfg.has_section("footer")
             and cfg.has_option("footer", "pattern")
         ):
             fpattern = cfg.get("footer", "pattern")
             compiled = re.compile(fpattern)
-            for line in footers:
-                if line.strip() == "":
-                    continue
-                if not compiled.match(line):
-                    errors += 1
-                    self.warning(f"Commit {commit}: footer line does not match pattern")
-                    self.info(f"Line: '{line}'")
-                    self.info(f"Expected pattern: {fpattern}")
+            if not compiled.match(footer):
+                errors += 1
+                self.warning(f"Commit {commit}: footer line does not match pattern")
+                self.info(f"Line: '{footer}'")
+                self.info(f"Expected pattern: {fpattern}")
 
         return errors
 

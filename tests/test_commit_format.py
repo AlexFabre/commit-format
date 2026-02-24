@@ -74,19 +74,19 @@ class TestCommitFormatInit:
 class TestSplitMessage:
     def test_header_only(self):
         cf = CommitFormat()
-        header, body, footers, lines = cf.split_message("fix: simple fix", False)
+        header, body, footer, lines = cf.split_message("fix: simple fix", False)
         assert header == "fix: simple fix"
         assert body == []
-        assert not footers
+        assert footer == ""
         assert lines == ["fix: simple fix"]
 
     def test_header_and_body(self):
         cf = CommitFormat()
         message = "fix: bug fix\n\nThis fixes the bug in the parser."
-        header, body, footers, lines = cf.split_message(message, False)
+        header, body, footer, lines = cf.split_message(message, False)
         assert header == "fix: bug fix"
         assert body == ["", "This fixes the bug in the parser."]
-        assert not footers
+        assert footer == ""
         assert len(lines) == 3
 
     def test_header_body_and_footer(self):
@@ -94,27 +94,27 @@ class TestSplitMessage:
         message = (
             "feat: new feature\n\nAdded new functionality.\n\nSigned-off-by: Author"
         )
-        header, body, footers, lines = cf.split_message(message, True)
+        header, body, footer, lines = cf.split_message(message, True)
         assert header == "feat: new feature"
         assert body == ["", "Added new functionality.", ""]
-        assert footers == ["Signed-off-by: Author"]
+        assert footer == "Signed-off-by: Author"
         assert len(lines) == 5
 
     def test_footer_with_trailing_empty_lines(self):
         cf = CommitFormat()
         message = "fix: bug\n\nBody text.\n\nSigned-off-by: Author\n\n"
-        header, body, footers, lines = cf.split_message(message, True)
+        header, body, footer, lines = cf.split_message(message, True)
         assert header == "fix: bug"
         assert body == ["", "Body text.", ""]
-        assert footers == ["Signed-off-by: Author"]
+        assert footer == "Signed-off-by: Author"
         assert len(lines) == 6
 
     def test_empty_message(self):
         cf = CommitFormat()
-        header, body, footers, lines = cf.split_message("", False)
+        header, body, footer, lines = cf.split_message("", False)
         assert header == ""
         assert body == []
-        assert not footers
+        assert footer == ""
         assert len(lines) == 0
 
 
