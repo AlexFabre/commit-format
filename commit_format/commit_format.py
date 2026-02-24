@@ -279,10 +279,10 @@ class CommitFormat:
         if has_footer:
             # Identify the last non-empty line as the potential footer
             i = line_cnt - 1
-            while i > 0 and lines[i].strip() == "":
+            while i > 0 and not lines[i].strip():
                 i -= 1
-
-            footer_start = i if i > 0 else line_cnt
+            if i > 0:
+                footer_start = i
 
         # Determine the body by excluding the header and footer
         body = lines[1:footer_start] if line_cnt > 1 else []
