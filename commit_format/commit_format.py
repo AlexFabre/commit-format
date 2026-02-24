@@ -268,9 +268,13 @@ class CommitFormat:
 
         """
         lines = message.splitlines()
+
+        if not lines:
+            return "", [], "", lines
+
         line_cnt = len(lines)
         footer_start = line_cnt
-        header = lines[0] if lines else ""
+        header = lines[0]
 
         if has_footer:
             # Identify the last non-empty line as the potential footer
