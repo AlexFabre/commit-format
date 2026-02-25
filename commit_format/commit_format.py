@@ -131,7 +131,9 @@ class CommitFormat:
             )
             return result.stdout.split()
 
-        self.error(f"Running on branch {base_branch}. Abort checking commits.")
+        self.warning(
+            f"Running on base branch {base_branch}. Use option -a to check base branch commits."
+        )
         sys.exit(0)
 
     def list_all_commits(self) -> list:
