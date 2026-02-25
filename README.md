@@ -84,7 +84,7 @@ Example `.commit-format`:
 ```toml
 [header]
 # Header line regex:
-pattern = ^(feat: |fix: |ci: |doc: ).+$
+pattern = "^(feat: |fix: |ci: |doc: ).+$"
 
 [body]
 # Require commit to have a body. (i.e. prevent single line commit message).
@@ -92,7 +92,7 @@ required = true
 
 [footer]
 # Footer line regex
-pattern = ^(Signed-off-by: ).+$
+pattern = "^(Signed-off-by: ).+$"
 
 ```
 

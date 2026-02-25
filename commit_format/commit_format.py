@@ -9,7 +9,7 @@ import argparse
 import subprocess
 import sys
 import re
-import configparser
+import tomllib
 import os
 from importlib.metadata import version, PackageNotFoundError
 from urllib.parse import urlparse
@@ -254,12 +254,14 @@ class CommitFormat:
         return err
 
     def load_template(self, template_path: str):
-        cfg = configparser.ConfigParser()
-        read = cfg.read(template_path)
-        if not read:
+        if os.path.isfile(template_path):
+            with open(template_path, mode="rb") as f:
+                data = tomllib.load(f)
+
+            self.commit_template = data
+        else:
             self.error(f"Template file not found or unreadable: {template_path}")
             sys.exit(2)
-        self.commit_template = cfg
 
     def split_message(self, message: str, has_footer: bool):
         """
@@ -324,36 +326,41 @@ class CommitFormat:
             return 0
 
         errors = 0
-        cfg = self.commit_template
+        template = self.commit_template
 
         footer_required = False
-        if cfg.has_section("footer") and cfg.has_option("footer", "pattern"):
-            footer_required = True
+
+        try:
+            footer_required = template["footer"]["pattern"]
+        except KeyError:
+            pass
 
         header, body, footer, *_ = self.split_message(commit_message, footer_required)
 
         # Header checks
-        if cfg.has_section("header") and cfg.has_option("header", "pattern"):
-            pattern = cfg.get("header", "pattern")
+
+        try:
+            pattern = template["header"]["pattern"]
             if not re.match(pattern, header):
                 errors |= Error.HEADER_PATTERN_MISMATCH
                 self.warning(f"Commit {commit}: header does not match required pattern")
                 self.info(f"Header: '{header}'")
                 self.info(f"Expected pattern: {pattern}")
+        except KeyError:
+            pass
 
         # Body check
-        body_required = True
-        if cfg.has_section("body") and cfg.has_option("body", "allow_empty"):
-            try:
-                body_required = not cfg.getboolean("body", "allow_empty")
-            except ValueError:
-                body_required = True
+        body_required = False
+        try:
+            body_required = template["body"]["allow_empty"]
+            body_required = not body_required
+        except KeyError:
+            pass
 
-        if cfg.has_section("body") and cfg.has_option("body", "required"):
-            try:
-                body_required = cfg.getboolean("body", "required")
-            except ValueError:
-                body_required = True
+        try:
+            body_required = template["body"]["required"]
+        except KeyError:
+            pass
 
         if body_required:
             body_has_content = any(line.strip() != "" for line in body)
@@ -368,13 +375,16 @@ class CommitFormat:
 
         # Footer line pattern
         if footer_required and footer != "":
-            fpattern = cfg.get("footer", "pattern")
-            compiled = re.compile(fpattern)
-            if not compiled.match(footer):
-                errors |= Error.FOOTER_PATTERN_MISMATCH
-                self.warning(f"Commit {commit}: footer line does not match pattern")
-                self.info(f"Footer: '{footer}'")
-                self.info(f"Expected pattern: {fpattern}")
+            try:
+                fpattern = template["footer"]["pattern"]
+                compiled = re.compile(fpattern)
+                if not compiled.match(footer):
+                    errors |= Error.FOOTER_PATTERN_MISMATCH
+                    self.warning(f"Commit {commit}: footer line does not match pattern")
+                    self.info(f"Footer: '{footer}'")
+                    self.info(f"Expected pattern: {fpattern}")
+            except KeyError:
+                pass
 
         return errors
 
@@ -505,8 +515,7 @@ def main():
             error_found += error_on_commit
 
     # Warnings for deprecated options:
-    cfg = commit_format.commit_template
-    if cfg.has_section("body") and cfg.has_option("body", "allow_empty"):
+    if "allow_empty" in commit_format.commit_template.get("body", {}):
         commit_format.warning(
             "Template option 'Body::allow_empty' is deprecated. Use 'Body::required' instead"
         )

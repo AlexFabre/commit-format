@@ -1,6 +1,6 @@
 [header]
 # Header line regex:
-pattern = ^(option: |requirements: |ci: |doc: |release: |script: |format: |test: |quality: ).+$
+pattern = "^(option: |requirements: |ci: |doc: |release: |script: |format: |test: |quality: ).+$"
 
 [body]
 # Require commit to have a body. (i.e. prevent single line commit message).
@@ -8,4 +8,4 @@ required = true
 
 [footer]
 # Footer line regex
-pattern = ^(Signed-off-by: |Co-authored-by: |Refs: |Fixes: ).+$
+pattern = "^(Signed-off-by: |Co-authored-by: |Refs: |Fixes: ).+$"
