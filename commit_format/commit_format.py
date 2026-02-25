@@ -491,15 +491,15 @@ def main():
         commit_list = commit_format.list_unique_commits(current_branch, args.base)
 
     if not commit_list:
-        commit_format.error(
-            f"Error:{RESET} branch {GREEN}{current_branch}{RESET} "
+        commit_format.info(
+            f"{RED}Error:{RESET} branch {GREEN}{current_branch}{RESET} "
             f"has no diff commit with base branch {GREEN}{args.base}{RESET}"
         )
         sys.exit(1)
 
     commit_format.debug(
         f"Checking {GREEN}{len(commit_list)}{RESET} "
-        "commits on branch {GREEN}{current_branch}{RESET}"
+        f"commits on branch {GREEN}{current_branch}{RESET}"
     )
 
     pass_count = 0
