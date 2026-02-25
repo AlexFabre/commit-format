@@ -11,6 +11,7 @@ import sys
 import re
 import tomllib
 import os
+import shutil
 from importlib.metadata import version, PackageNotFoundError
 from urllib.parse import urlparse
 from enum import IntFlag
@@ -478,6 +479,12 @@ def main():
 
     if template_path:
         commit_format.load_template(template_path)
+
+    if not args.no_spelling and not shutil.which("codespell"):
+        commit_format.error(
+            "codespell not found. Install it or use -ns to skip spelling checks"
+        )
+        sys.exit(1)
 
     error_found = 0
     current_branch = commit_format.get_current_branch()
