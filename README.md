@@ -4,10 +4,10 @@ A tool to check your commit messages format.
 
 ## Supported checkers
 
-Primarily disigned for to check for spelling mistakes in commit messages,
+Primarily designed to check for spelling mistakes in commit messages,
 `commit-format` now comes with various checker allowing to:
 
-- Check that each message lines does not exceed a length limit.
+- Check that each message lines do not exceed a length limit.
 - Check for spelling mistake on commit messages.
 - Check commit header/body/footer against a defined template.
 
@@ -17,7 +17,7 @@ Primarily disigned for to check for spelling mistakes in commit messages,
 pip install commit-format
 ```
 
-Help command will show you all availables options:
+Help command will show you all available options:
 
 ```sh
 commit-format --help
@@ -110,7 +110,7 @@ Running on branch main. Abort checking commits.
 This measure is there to prevent running the script over past commits.
 
 If running on 'main'/'master' is required, option `-a` will force the script
-to run regadless the branch name.
+to run regardless the branch name.
 
 Usage:
 
@@ -122,7 +122,7 @@ commit-format -a
 
 You can set the base branch name according to your project.  
 As described in `option -a` section the base branch name is required to let the
-script restrict it's analysis on the commits of a branch. Default value for the
+script restrict its analysis on the commits of a branch. Default value for the
 base branch name is `main`.  
 
 > When running this script in a CI environment, you may be required to fetch your
