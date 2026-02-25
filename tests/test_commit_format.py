@@ -170,14 +170,13 @@ class TestTemplateCheck:
         cf = CommitFormat()
         template_file = tmp_path / ".commit-format"
         template_file.write_text("""[header]
-pattern = ^(fix: |feat: |doc: |ci: ).+$
+pattern = "^(fix: |feat: |doc: |ci: ).+$"
 
 [body]
-allow_empty = false
+required = true
 
 [footer]
-required = true
-pattern = ^(Signed-off-by: |Refs: ).+$
+pattern = "^(Signed-off-by: |Refs: ).+$"
 """)
         cf.load_template(str(template_file))
         return cf
@@ -222,10 +221,10 @@ class TestLoadTemplate:
     def test_load_valid_template(self, tmp_path):
         cf = CommitFormat()
         template_file = tmp_path / ".commit-format"
-        template_file.write_text("[header]\npattern = ^fix: .+$\n")
+        template_file.write_text('[header]\npattern = "^fix: .+$"\n')
         cf.load_template(str(template_file))
         assert cf.commit_template is not None
-        assert cf.commit_template.has_section("header")
+        assert cf.commit_template["header"]["pattern"] == "^fix: .+$"
 
     def test_load_nonexistent_template(self, tmp_path):
         cf = CommitFormat()
