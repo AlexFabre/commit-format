@@ -500,11 +500,14 @@ def main():
         "commits on branch {GREEN}{current_branch}{RESET}"
     )
 
+    pass_count = 0
+
     for commit in commit_list:
         error_on_commit = 0
         commit_message = commit_format.get_commit_message(commit)
         if args.no_spelling is False:
             error_on_commit += commit_format.spell_check(commit, commit_message)
+
         error_on_commit += commit_format.lines_length(
             commit, commit_message, args.limit
         )
@@ -513,11 +516,20 @@ def main():
 
         if not error_on_commit:
             commit_format.info(f"{GREEN}Commit {commit} OK{RESET}")
+            pass_count += 1
         else:
             error_found += error_on_commit
 
+    # Summary
+    print(
+        f"{pass_count}/{len(commit_list)} commits passed, {len(commit_list) - pass_count} failed"
+    )
+
     # Warnings for deprecated options:
-    if commit_format.commit_template and "allow_empty" in commit_format.commit_template.get("body", {}):
+    if (
+        commit_format.commit_template
+        and "allow_empty" in commit_format.commit_template.get("body", {})
+    ):
         commit_format.warning(
             "Template option 'Body::allow_empty' is deprecated. Use 'Body::required' instead"
         )
