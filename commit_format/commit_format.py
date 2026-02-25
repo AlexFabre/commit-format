@@ -392,6 +392,23 @@ class CommitFormat:
         return errors
 
 
+def detect_base_branch() -> str:
+    """Auto-detect the default branch from the remote, fallback to 'main'."""
+    try:
+        result = subprocess.run(
+            ["git", "symbolic-ref", "refs/remotes/origin/HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            # Output is like "refs/remotes/origin/main"
+            return result.stdout.strip().split("/")[-1]
+    except FileNotFoundError:
+        pass
+    return "main"
+
+
 def find_config_file() -> str | None:
     """Auto-discover config file in current directory or git root."""
     candidates = [".commit-format", ".commit-format.toml"]
@@ -449,12 +466,13 @@ def main():
         help="path to a commit-format template file to validate header/body/footer "
         "commit message structure",
     )
+    default_base = detect_base_branch()
     parser.add_argument(
         "-b",
         "--base",
         type=str,
-        default="main",
-        help="name of the base branch. Default 'main'",
+        default=default_base,
+        help=f"name of the base branch. Default '{default_base}'",
     )
     parser.add_argument(
         "-a",
