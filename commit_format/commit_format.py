@@ -474,6 +474,8 @@ def main():
         if template_path:
             commit_format.debug(f"Auto-discovered config: {template_path}")
 
+    commit_format.info(f"Using config file: {template_path}")
+
     if template_path:
         commit_format.load_template(template_path)
 
