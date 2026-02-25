@@ -515,19 +515,19 @@ def main():
         error_on_commit = 0
         commit_message = commit_format.get_commit_message(commit)
         if args.no_spelling is False:
-            error_on_commit += commit_format.spell_check(commit, commit_message)
+            error_on_commit |= commit_format.spell_check(commit, commit_message)
 
-        error_on_commit += commit_format.lines_length(
+        error_on_commit |= commit_format.lines_length(
             commit, commit_message, args.limit
         )
         if commit_format.commit_template is not None:
-            error_on_commit += commit_format.template_check(commit, commit_message)
+            error_on_commit |= commit_format.template_check(commit, commit_message)
 
         if not error_on_commit:
             commit_format.info(f"{GREEN}Commit {commit} OK{RESET}")
             pass_count += 1
         else:
-            error_found += error_on_commit
+            error_found |= error_on_commit
 
     # Summary
     print(
