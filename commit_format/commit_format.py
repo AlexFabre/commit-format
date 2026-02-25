@@ -517,7 +517,7 @@ def main():
             error_found += error_on_commit
 
     # Warnings for deprecated options:
-    if "allow_empty" in commit_format.commit_template.get("body", {}):
+    if commit_format.commit_template and "allow_empty" in commit_format.commit_template.get("body", {}):
         commit_format.warning(
             "Template option 'Body::allow_empty' is deprecated. Use 'Body::required' instead"
         )
