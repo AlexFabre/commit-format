@@ -549,10 +549,10 @@ def main():
 
     if not commit_list:
         commit_format.info(
-            f"{RED}Error:{RESET} branch {GREEN}{current_branch}{RESET} "
+            f"{YELLOW}Warn:{RESET} branch {GREEN}{current_branch}{RESET} "
             f"has no diff commit with base branch {GREEN}{args.base}{RESET}"
         )
-        sys.exit(1)
+        sys.exit(0)
 
     commit_format.debug(
         f"Checking {GREEN}{len(commit_list)}{RESET} "

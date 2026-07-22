@@ -101,16 +101,18 @@ pattern = "^(Signed-off-by: ).+$"
 ### `-a`, `--all` Force checking all commits
 
 By default the script will only run on a branch and stop when reaching the base
-branch. If run on a base branch directly, the script will throw an error:
+branch.  
+Without option `-a`, if run on a base branch directly, or on a branch that has
+no commit difference with `main`, the script will stop and return this message:
 
 ```sh
-Running on branch main. Abort checking commits.
+Warn: branch HEAD has no diff commit with base branch origin/main
 ```
 
-This measure is there to prevent running the script over past commits.
+This measure is there to prevent running the script over past commits by mistake.
 
-If running on 'main'/'master' is required, option `-a` will force the script
-to run regardless the branch name.
+If running on 'main'/'master' past commits is required, option `-a` will force
+the script to run regardless the branch name.
 
 Usage:
 
