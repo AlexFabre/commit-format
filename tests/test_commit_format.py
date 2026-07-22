@@ -226,6 +226,26 @@ class TestLoadTemplate:
         assert cf.commit_template is not None
         assert cf.commit_template["header"]["pattern"] == "^fix: .+$"
 
+    def test_load_unquoted_pattern_template(self, tmp_path):
+        cf = CommitFormat()
+        template_file = tmp_path / ".commit-format"
+        template_file.write_text(
+            "[header]\n"
+            "pattern = ^(fix: |feat: |doc: |ci: ).+$\n\n"
+            "[body]\n"
+            "required = true\n\n"
+            "[footer]\n"
+            "pattern = ^(Signed-off-by: |Refs: ).+$\n"
+        )
+
+        cf.load_template(str(template_file))
+
+        assert cf.commit_template is not None
+        assert (
+            cf.commit_template["header"]["pattern"] == "^(fix: |feat: |doc: |ci: ).+$"
+        )
+        assert cf.commit_template["footer"]["pattern"] == "^(Signed-off-by: |Refs: ).+$"
+
     def test_load_nonexistent_template(self, tmp_path):
         cf = CommitFormat()
         with pytest.raises(SystemExit) as exc_info:

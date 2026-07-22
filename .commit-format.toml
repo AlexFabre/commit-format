@@ -1,6 +1,6 @@
 [header]
 # Header line regex:
-pattern = "^(option: |requirements: |ci: |doc: |release: |script: |format: |test: |quality: ).+$"
+pattern = "^(fix: |option: |requirements: |ci: |doc: |release: |script: |format: |test: |quality: ).+$"
 
 [body]
 # Require commit to have a body. (i.e. prevent single line commit message).
