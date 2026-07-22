@@ -6,6 +6,7 @@
 # pylint: disable=R0915
 
 import argparse
+import json
 import subprocess
 import sys
 import re
@@ -259,12 +260,43 @@ class CommitFormat:
     def load_template(self, template_path: str):
         if os.path.isfile(template_path):
             with open(template_path, mode="rb") as f:
-                data = tomllib.load(f)
+                raw_template = f.read()
 
-            self.commit_template = data
+            try:
+                self.commit_template = tomllib.loads(raw_template.decode("utf-8"))
+                return
+            except tomllib.TOMLDecodeError:
+                pass
+
+            # Legacy compatibility: older templates may leave regex patterns unquoted.
+            normalized_template = self._normalize_template(raw_template.decode("utf-8"))
+            try:
+                self.commit_template = tomllib.loads(normalized_template)
+            except tomllib.TOMLDecodeError as exc:
+                self.error(f"Template file is not valid TOML: {template_path}")
+                raise exc
         else:
             self.error(f"Template file not found or unreadable: {template_path}")
             sys.exit(2)
+
+    def _normalize_template(self, template_text: str) -> str:
+        """
+        Accept legacy bare regex values for `pattern` keys by quoting them.
+
+        This keeps standard TOML parsing intact for valid templates while making
+        older unquoted patterns usable as a compatibility fallback.
+        """
+        normalized_lines = []
+
+        for line in template_text.splitlines():
+            match = re.match(r"^(\s*pattern\s*=\s*)([^\"'\s].*?)\s*$", line)
+            if match:
+                prefix, value = match.groups()
+                normalized_lines.append(f"{prefix}{json.dumps(value)}")
+            else:
+                normalized_lines.append(line)
+
+        return "\n".join(normalized_lines)
 
     def split_message(self, message: str, has_footer: bool):
         """
